@@ -67,7 +67,11 @@ class FacturaResource extends Resource
           ->join('producto', 'factura.id', '=', 'producto.id_factura')
           ->join('inventario', 'producto.id', '=', 'inventario.id_producto')
           ->where('inventario.id_usuario', auth()->id())
-          ->select('factura.*')
+          ->select(
+            'factura.id',
+            'factura.codigo_factura',
+            'factura.fecha_emision',
+            'factura.total_factura')
           ->distinct();
       })
       ->filters([
