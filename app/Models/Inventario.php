@@ -20,10 +20,10 @@ class Inventario extends Model
 
   public function producto()
   {
-    return $this->hasMany(Producto::class);
+    return $this->belongsTo(Producto::class, 'id_producto');
   }
 
   public function users() {
-    return $this->hasMany(User::class);
+    return $this->belongsTo(User::class, 'id_usuario');
   }
 }

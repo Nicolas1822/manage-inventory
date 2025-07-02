@@ -15,10 +15,10 @@ class Factura extends Model
 
   public function producto()
   {
-    return $this->belongsTo(Inventario::class, 'id_factura');
+    return $this->hasMany(Producto::class, 'id_factura');
   }
 
   public function users()  {
-    return $this->hasMany(User::class, 'id_usuario');
+    return $this->belongsTo(User::class, 'id_usuario');
   }
 }
