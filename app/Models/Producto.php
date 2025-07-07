@@ -27,6 +27,10 @@ class Producto extends Model
   }
 
   public function factura() {
-    return $this->hasOne(Factura::class, 'id_factura');
+    return $this->belongsTo(Factura::class, 'id_factura');
+  }
+
+  public function ventaDetalle() {
+    return $this->hasMany(VentaDetalle::class, 'id_producto');
   }
 }
