@@ -15,7 +15,7 @@ class ProductoObserver
     Inventario::create([
         'id_producto' => $producto->id,
         'id_usuario' => auth()->id(),
-        'id_factura' => $producto->id_factura, // Guarda en inventario, no en producto
+        'id_factura' => $producto->id_factura,
         'cantidad_disponible' => $producto->cantidad_total_inicial,
         'cantidad_total_inicial' => $producto->cantidad_total_inicial,
         'lote_producto' => $producto->lote_producto,

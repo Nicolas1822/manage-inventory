@@ -28,7 +28,7 @@ class CreateVenta extends CreateRecord
         return [
           'id_producto' => $producto['id_producto'],
           'id_usuario' => auth()->id(),
-          'cantidad_vendida_producto' => $producto['cantidad'],
+          'cantidad_vendida_producto' => $producto['cantidad_vendida_producto'],
         ];
       })->toArray()
     );
@@ -40,10 +40,10 @@ class CreateVenta extends CreateRecord
   protected function modificarCantidadVendidaProducto(array $data): void
   {
     foreach ($data['productos'] as $producto) {
-      $product = Producto::find($producto['id_producto']);
-      if ($product) {
-        $product->cantidad_vendida += $producto['cantidad'];
-        $product->save();
+      $obtenerPoducto = Producto::find($producto['id_producto']);
+      if ($obtenerPoducto) {
+        $obtenerPoducto->cantidad_vendida += $producto['cantidad_vendida_producto'];
+        $obtenerPoducto->save();
       }
     }
 
@@ -53,7 +53,7 @@ class CreateVenta extends CreateRecord
         ->first();
 
       if ($inventario) {
-        $inventario->cantidad_disponible -= $producto['cantidad'];
+        $inventario->cantidad_disponible -= $producto['cantidad_vendida_producto'];
         $inventario->save();
       }
     }

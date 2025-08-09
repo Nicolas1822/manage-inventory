@@ -4,7 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\VentaResource\Pages;
 use App\Models\Venta;
+use App\Models\VentaDetalle;
 use App\Models\Producto;
+use App\Models\Inventario;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -19,12 +21,15 @@ use Filament\Forms\Components\Actions;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
+use Filament\Notifications\Notification;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 
 class VentaResource extends Resource
 {
   protected static ?string $model = Venta::class;
+
+
 
   protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
@@ -44,7 +49,7 @@ class VentaResource extends Resource
                   ->default(now()),
                 Section::make('Agregar Productos')
                   ->schema([
-                    Select::make('producto_id')
+                    Select::make('agregar_producto_id')
                       ->label('Nombre del Producto')
                       ->placeholder('Seleccione el producto')
                       ->options(function () {
@@ -77,28 +82,46 @@ class VentaResource extends Resource
                         ->label('Agregar a la lista')
                         ->button()
                         ->action(function (Set $set, Get $get) {
-                          $productoId = $get('producto_id');
-                          $cantidad = 1;
-
-                          if (!$productoId)
+                          $productoId = $get('agregar_producto_id');
+                          if (!$productoId) {
                             return;
+                          }
 
-                          $obtenerProducto = Producto::find($productoId);
                           $productosAgregados = $get('productos') ?: [];
+                          $collectProductos = collect($productosAgregados);
 
-                          // Agregar nuevo producto
-                          $productosAgregados[] = [
-                            'id_producto' => $obtenerProducto->id,
-                            'nombre' => $obtenerProducto->nombre_producto,
-                            'precio' => number_format($obtenerProducto->precio_unidad, 0, '', ','),
-                            'cantidad' => $cantidad,
-                          ];
+                          $key = $collectProductos->search(fn($producto) => $producto['id_producto'] == $productoId);
+
+                          if ($key !== false) {
+                            $productosAgregados[$key]['cantidad_vendida_producto']++;
+
+                            Notification::make()
+                              ->title('Cantidad actualizada')
+                              ->body('Se ha incrementado la cantidad del producto existente.')
+                              ->success()
+                              ->send();
+                          } else {
+                            $cantidad = 1;
+                            $obtenerProducto = Producto::find($productoId);
+
+                            $productosAgregados[] = [
+                              'id_producto' => $obtenerProducto->id,
+                              'nombre' => $obtenerProducto->nombre_producto,
+                              'precio' => number_format($obtenerProducto->precio_unidad, 0, '', ','),
+                              'cantidad_vendida_producto' => $cantidad,
+                              'id_usuario' => auth()->id(),
+                            ];
+
+                            Notification::make()
+                              ->title('Producto agregado')
+                              ->success()
+                              ->send();
+                          }
 
                           $set('productos', $productosAgregados);
-
                           self::modificarTotal($get, $set);
-                          // Resetear campos
-                          $set('producto_id', null);
+
+                          $set('agregar_producto_id', null);
                           $set('precio_unidad', null);
                         })
                     ])
@@ -116,6 +139,9 @@ class VentaResource extends Resource
                       ->label(false)
                       ->defaultItems(0)
                       ->schema([
+                        Hidden::make('id_producto')
+                          ->required(),
+
                         TextInput::make('nombre')
                           ->label('Producto')
                           ->disabled(),
@@ -124,17 +150,13 @@ class VentaResource extends Resource
                           ->label('Precio')
                           ->disabled(),
 
-                        TextInput::make('cantidad')
+                        TextInput::make('cantidad_vendida_producto')
                           ->label('Cantidad')
                           ->numeric()
                           ->required(true)
                           ->minValue(1)
                           ->default(1)
                           ->live()
-                          ->afterStateUpdated(function (Get $get, Set $set) {
-                            self::modificarTotal($get, $set);
-
-                          }),
                       ])
                       ->columns(3)
                       ->rule(['array', 'min:1'])
@@ -158,7 +180,42 @@ class VentaResource extends Resource
 
                       ->deleteAction(
                         fn(Action $action) => $action->after(fn(Get $get, Set $set) => self::modificarTotal($get, $set))
-                      ),
+                      )
+                      ->loadStateFromRelationshipsUsing(function (Repeater $component, ?Venta $record) {
+                        if ($record) {
+                          $productos = $record->ventaDetalle->map(function (VentaDetalle $vd) {
+                            return [
+                              'id_producto' => $vd->id_producto,
+                              'nombre' => $vd->producto->nombre_producto,
+                              'precio' => number_format($vd->producto->precio_unidad, 0, '', ','),
+                              'cantidad_vendida_producto' => $vd->cantidad_vendida_producto
+                            ];
+                          })->toArray();
+
+                          $component->state($productos);
+                        }
+                      })
+
+                      ->saveRelationshipsUsing(function (Venta $record, array $state) {
+                        $nuevosDetalles = collect($state)->keyBy('id_producto');
+                        $viejosDetalles = $record->ventaDetalle->keyBy('id_producto');
+
+                        foreach ($nuevosDetalles as $idProducto => $dataDetalleNuevo) {
+                          $detalleViejo = $viejosDetalles->get($idProducto);
+                          if ($detalleViejo) {
+                            $detalleViejo->update($dataDetalleNuevo);
+                          } else {
+                            $record->ventaDetalle()->create($dataDetalleNuevo);
+                            self::modificarCantidadProductoInventario($dataDetalleNuevo);
+                          }
+                        }
+
+                        foreach ($viejosDetalles as $idProducto => $detalleViejo) {
+                          if (!$nuevosDetalles->has($idProducto)) {
+                            $detalleViejo->delete();
+                          }
+                        }
+                      }),
 
                     Placeholder::make('total_label')
                       ->label('Total:')
@@ -167,7 +224,7 @@ class VentaResource extends Resource
                         $total = collect($totalProductosAgregados)
                           ->reduce(function ($carry, $item) {
                             $precio = str_replace(',', '', $item['precio']);
-                            return $carry + ((float) $precio * (int) ($item['cantidad'] ?? 1));
+                            return $carry + ((float) $precio * (int) ($item['cantidad_vendida_producto'] ?? 1));
                           }, 0);
 
                         return '$' . number_format($total, 0, ',', '.');
@@ -215,13 +272,31 @@ class VentaResource extends Resource
       ]);
   }
 
+  public static function modificarCantidadProductoInventario(array $data): void
+  {
+    $obtenerPoducto = Producto::find($data['id_producto']);
+    if ($obtenerPoducto) {
+      $obtenerPoducto->cantidad_vendida += $data['cantidad_vendida_producto'];
+      $obtenerPoducto->save();
+    }
+
+    $inventario = Inventario::where('id_producto', $data['id_producto'])
+      ->where('id_usuario', auth()->id())
+      ->first();
+
+    if ($inventario) {
+      $inventario->cantidad_disponible -= $data['cantidad_vendida_producto'];
+      $inventario->save();
+    }
+  }
+
   public static function modificarTotal(Get $get, Set $set): void
   {
     $totalProductosAgregados = $get('productos') ?: [];
     $total = collect($totalProductosAgregados)
       ->reduce(function ($carry, $item) {
         $precio = str_replace(',', '', $item['precio']);
-        return $carry + ((float) $precio * (int) ($item['cantidad'] ?? 1));
+        return $carry + ((float) $precio * (int) ($item['cantidad_vendida_producto'] ?? 1));
       }, 0);
 
     $set('total_venta', $total);
