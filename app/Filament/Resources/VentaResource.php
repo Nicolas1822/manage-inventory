@@ -87,12 +87,22 @@ class VentaResource extends Resource
                             return;
                           }
 
+                          $obtenerInventario = Inventario::where('id_producto', $productoId)
+                            ->where('id_usuario', auth()->id())
+                            ->first();
+
                           $productosAgregados = $get('productos') ?: [];
                           $collectProductos = collect($productosAgregados);
 
                           $key = $collectProductos->search(fn($producto) => $producto['id_producto'] == $productoId);
 
-                          if ($key !== false) {
+                          if (!$obtenerInventario->cantidad_disponible) {
+                            Notification::make()
+                              ->title('Producto no disponible')
+                              ->body('Este producto se encuentra agotado por el momento')
+                              ->danger()
+                              ->send();
+                          } else if ($key !== false) {
                             $productosAgregados[$key]['cantidad_vendida_producto']++;
 
                             Notification::make()
