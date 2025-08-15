@@ -22,6 +22,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
+use Filament\Support\Exceptions\Halt;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 
@@ -212,7 +213,19 @@ class VentaResource extends Resource
 
                         foreach ($nuevosDetalles as $idProducto => $dataDetalleNuevo) {
                           $detalleViejo = $viejosDetalles->get($idProducto);
+                          $inventario = Inventario::where('id_producto', $dataDetalleNuevo['id_producto'])
+                            ->where('id_usuario', auth()->id())
+                            ->first();
+                          $stockDisponibleReal = ($inventario?->cantidad_disponible ?? 0) + $detalleViejo['cantidad_vendida_producto'];
                           if ($detalleViejo) {
+                            if ($stockDisponibleReal < (int) $dataDetalleNuevo['cantidad_vendida_producto']) {
+                              Notification::make()
+                                ->title('Inventario insuficiente')
+                                ->body("No hay suficiente stock del producto Unidades disponibles: {$inventario->cantidad_disponible}")
+                                ->danger()
+                                ->send();
+                              throw new Halt();
+                            }
                             $detalleViejo->update($dataDetalleNuevo);
                           } else {
                             $record->ventaDetalle()->create($dataDetalleNuevo);

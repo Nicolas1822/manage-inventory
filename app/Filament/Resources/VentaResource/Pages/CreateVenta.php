@@ -3,6 +3,8 @@ namespace App\Filament\Resources\VentaResource\Pages;
 
 use App\Filament\Resources\VentaResource;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Notifications\Notification;
+use Filament\Support\Exceptions\Halt;
 use App\Models\Venta;
 use App\Models\Producto;
 use App\Models\Inventario;
@@ -17,6 +19,30 @@ class CreateVenta extends CreateRecord
   }
 
   protected function handleRecordCreation(array $data): Venta
+  {
+    foreach ($data['productos'] as $producto) {
+      $inventario = Inventario::where('id_producto', $producto['id_producto'])
+        ->where('id_usuario', auth()->id())
+        ->first();
+
+      if (!$inventario || $inventario->cantidad_disponible <= $producto['cantidad_vendida_producto']) {
+
+        Notification::make()
+          ->title('Inventario Insuficiente')
+          ->body("No hay suficiente stock para el producto. Disponibles: " . ($inventario?->cantidad_disponible ?? 0))
+          ->danger()
+          ->send();
+
+        throw new Halt();
+      }
+    }
+
+    $venta = $this->crearVenta($data);
+
+    return $venta;
+  }
+
+  protected function crearVenta(array $data)
   {
     $venta = Venta::create([
       'fecha_venta' => $data['fecha_venta'],
