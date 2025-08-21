@@ -23,6 +23,9 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Support\Exceptions\Halt;
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Filters\Filter;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 
@@ -295,7 +298,22 @@ class VentaResource extends Resource
           ->toggleable(isToggledHiddenByDefault: true),
       ])
       ->filters([
-        //
+        Filter::make('fecha_venta')
+          ->form([
+            DatePicker::make('fecha_venta_desde')->maxDate(now()),
+            DatePicker::make('fecha_venta_hasta')->maxDate(now())
+          ])
+          ->query(function (Builder $query, array $data): Builder {
+            return $query
+              ->when(
+                $data['fecha_venta_desde'],
+                fn(Builder $query, $date): Builder => $query->whereDate('fecha_venta', '>=', $date),
+              )
+              ->when(
+                $data['fecha_venta_hasta'],
+                fn(Builder $query, $date): Builder => $query->whereDate('fecha_venta', '<=', $date),
+              );
+          })
       ])
       ->actions([
         Tables\Actions\EditAction::make(),
