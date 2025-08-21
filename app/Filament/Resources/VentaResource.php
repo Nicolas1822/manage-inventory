@@ -28,6 +28,7 @@ use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use function Laravel\Prompts\select;
 
 class VentaResource extends Resource
 {
@@ -288,15 +289,24 @@ class VentaResource extends Resource
         Tables\Columns\TextColumn::make('total_venta')
           ->numeric()
           ->sortable(),
-        Tables\Columns\TextColumn::make('created_at')
-          ->dateTime()
-          ->sortable()
-          ->toggleable(isToggledHiddenByDefault: true),
         Tables\Columns\TextColumn::make('updated_at')
           ->dateTime()
           ->sortable()
           ->toggleable(isToggledHiddenByDefault: true),
       ])
+      ->modifyQueryUsing(function (Builder $query) {
+        return $query
+          ->join('venta_detalle', 'venta.id', '=', 'venta_detalle.id_venta')
+          ->select(
+            'venta.id',
+            'venta.fecha_venta',
+            'venta.total_venta',
+            'venta.updated_at',
+            'venta_detalle.id_usuario'
+          )
+          ->where('venta_detalle.id_usuario', auth()->id())
+          ->orderBy('venta.fecha_venta', 'desc');
+      })
       ->filters([
         Filter::make('fecha_venta')
           ->form([
