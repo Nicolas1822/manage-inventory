@@ -20,13 +20,14 @@ class ProductoResource extends Resource
 
   protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+protected static ?int $navigationSort = 1;
+
   public static function form(Form $form): Form
   {
     return $form
       ->schema([
         Forms\Components\TextInput::make('lote_producto')
           ->required()
-          // ->unique()
           ->numeric(),
         Forms\Components\TextInput::make('nombre_producto')
           ->required()

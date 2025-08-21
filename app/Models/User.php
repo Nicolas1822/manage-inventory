@@ -44,10 +44,14 @@ class User extends Authenticatable
   ];
 
   public function inventario() {
-    return $this->belongsTo(Inventario::class, 'id_usuario');
+    return $this->hasOne(Inventario::class, 'id_usuario');
   }
 
   public function factura() {
-    return $this->belongsTo(Factura::class, 'id_usuario');
+    return $this->hasMany(Factura::class, 'id_usuario');
   }
+
+  public function ventaDetalle() {
+    return $this->hasMany(VentaDetalle::class, 'id_venta');
+}
 }
