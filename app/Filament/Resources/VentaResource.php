@@ -88,7 +88,9 @@ class VentaResource extends Resource
                             return;
                           }
 
-                          $obtenerInventario = Inventario::where('id_producto', $productoId)
+                          $obtenerInventario = Inventario::query()
+                            ->select('cantidad_disponible')
+                            ->where('id_producto', $productoId)
                             ->where('id_usuario', auth()->id())
                             ->first();
 
@@ -210,24 +212,34 @@ class VentaResource extends Resource
                       ->saveRelationshipsUsing(function (Venta $record, array $state) {
                         $nuevosDetalles = collect($state)->keyBy('id_producto');
                         $viejosDetalles = $record->ventaDetalle->keyBy('id_producto');
-
                         foreach ($nuevosDetalles as $idProducto => $dataDetalleNuevo) {
                           $detalleViejo = $viejosDetalles->get($idProducto);
-                          $inventario = Inventario::where('id_producto', $dataDetalleNuevo['id_producto'])
-                            ->where('id_usuario', auth()->id())
+                          $inventario = Inventario::query()
+                            ->join('producto', 'inventario.id_producto', '=', 'producto.id')
+                            ->select('producto.nombre_producto', 'inventario.cantidad_disponible')
+                            ->where('inventario.id_producto', $dataDetalleNuevo['id_producto'])
+                            ->where('inventario.id_usuario', auth()->id())
                             ->first();
-                          $stockDisponibleReal = ($inventario?->cantidad_disponible ?? 0) + $detalleViejo['cantidad_vendida_producto'];
                           if ($detalleViejo) {
+                            $stockDisponibleReal = ($inventario?->cantidad_disponible ?? 0) + $detalleViejo['cantidad_vendida_producto'];
                             if ($stockDisponibleReal < (int) $dataDetalleNuevo['cantidad_vendida_producto']) {
                               Notification::make()
                                 ->title('Inventario insuficiente')
-                                ->body("No hay suficiente stock del producto Unidades disponibles: {$inventario->cantidad_disponible}")
+                                ->body("No hay suficiente stock para el producto {$inventario->nombre_producto}. Disponibles: " . ($inventario?->cantidad_disponible ?? 0))
                                 ->danger()
                                 ->send();
                               throw new Halt();
                             }
                             $detalleViejo->update($dataDetalleNuevo);
                           } else {
+                            if ($inventario->cantidad_disponible < (int) $dataDetalleNuevo['cantidad_vendida_producto']) {
+                              Notification::make()
+                                ->title('Inventario insuficiente')
+                                ->body("No hay suficiente stock para el producto {$inventario->nombre_producto}. Disponibles: " . ($inventario?->cantidad_disponible ?? 0))
+                                ->danger()
+                                ->send();
+                              throw new Halt();
+                            }
                             $record->ventaDetalle()->create($dataDetalleNuevo);
                             self::modificarCantidadProductoInventario($dataDetalleNuevo);
                           }

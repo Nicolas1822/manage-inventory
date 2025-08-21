@@ -21,15 +21,18 @@ class CreateVenta extends CreateRecord
   protected function handleRecordCreation(array $data): Venta
   {
     foreach ($data['productos'] as $producto) {
-      $inventario = Inventario::where('id_producto', $producto['id_producto'])
-        ->where('id_usuario', auth()->id())
+      $inventario = Inventario::query()
+        ->join('producto', 'inventario.id_producto', '=', 'producto.id')
+        ->select('producto.nombre_producto', 'inventario.cantidad_disponible')
+        ->where('inventario.id_producto', $producto['id_producto'])
+        ->where('inventario.id_usuario', auth()->id())
         ->first();
 
-      if (!$inventario || $inventario->cantidad_disponible <= $producto['cantidad_vendida_producto']) {
+      if (!$inventario || $inventario->cantidad_disponible < $producto['cantidad_vendida_producto']) {
 
         Notification::make()
           ->title('Inventario Insuficiente')
-          ->body("No hay suficiente stock para el producto. Disponibles: " . ($inventario?->cantidad_disponible ?? 0))
+          ->body("No hay suficiente stock para el producto {$inventario->nombre_producto}. Disponibles: " . ($inventario?->cantidad_disponible ?? 0))
           ->danger()
           ->send();
 
