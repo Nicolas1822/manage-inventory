@@ -28,7 +28,6 @@ use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use function Laravel\Prompts\select;
 
 class VentaResource extends Resource
 {
