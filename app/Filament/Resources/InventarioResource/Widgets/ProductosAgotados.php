@@ -17,7 +17,9 @@ class ProductosAgotados extends BaseWidget
   {
     return $table
       ->query(
-        Inventario::query()->where('cantidad_disponible', 0)
+        Inventario::query()
+          ->where('cantidad_disponible', 0)
+          ->where('id_usuario', auth()->id())
       )
       ->columns([
         TextColumn::make('producto.nombre_producto')
