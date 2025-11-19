@@ -12,7 +12,9 @@ return new class extends Migration {
   public function up(): void
   {
     if (Schema::hasTable('venta_detalle')) {
-      DB::statement('ALTER TABLE venta_detalle ADD COLUMN cantidad_vendida_producto INT NULL AFTER id_usuario');
+      Schema::table('venta_detalle', function (Blueprint $table) {
+        $table->unsignedInteger('cantidad_vendida_producto')->nullable()->after('id_usuario');
+      });
     }
   }
 
