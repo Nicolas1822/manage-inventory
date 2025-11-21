@@ -5,6 +5,8 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProductoResource\Pages;
 use App\Models\Inventario;
 use App\Models\Producto;
+use App\Models\Tributo;
+use App\Models\UnidadDeMedida;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -20,7 +22,7 @@ class ProductoResource extends Resource
 
   protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-protected static ?int $navigationSort = 1;
+  protected static ?int $navigationSort = 1;
 
   public static function form(Form $form): Form
   {
@@ -45,6 +47,30 @@ protected static ?int $navigationSort = 1;
           ->label('Unidades')
           ->numeric()
           ->required(),
+        Forms\Components\Select::make('id_unidad_medida')
+          ->label('Unidad de medida')
+          ->options(UnidadDeMedida::query()->pluck('name', 'id'))
+          ->searchable(),
+        Forms\Components\TextInput::make('porcentaje_descuento')
+          ->numeric()
+          ->required(),
+        Forms\Components\TextInput::make('porcentaje_impuesto')
+          ->numeric()
+          ->required(),
+        Forms\Components\Select::make('codigo_estandar_id')
+          ->label('Codigo estandar')
+          ->options([
+            '1' => 'Estándar de adopción del contribuyente',
+            '2' => 'UNSPSC',
+            '3' => 'Partida Arancelaria',
+            '4' => 'GTIN'
+          ]),
+        Forms\Components\Toggle::make('excluido')
+          ->label('Excluido de IVA'),
+        Forms\Components\Select::make('id_tributo')
+          ->label('Tributo')
+          ->options(Tributo::query()->pluck('name', 'id'))
+          ->searchable(),
         Forms\Components\Select::make('id_factura')
           ->relationship(
             name: 'factura',
@@ -66,9 +92,6 @@ protected static ?int $navigationSort = 1;
               ->mask(RawJs::make('$money($input)'))
               ->stripCharacters(',')
               ->numeric(),
-            Forms\Components\Hidden::make('id_usuario')
-              ->default(auth()->id())
-              ->required(),
           ])
           ->label('Código factura')
           ->required()
