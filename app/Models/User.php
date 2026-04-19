@@ -62,4 +62,8 @@ class User extends Authenticatable
   {
     return $this->hasMany(Cliente::class, 'id_usuario');
   }
+
+  public function facturaElectronica() {
+    return $this->hasMany(FacturaElectronica::class, 'id_usuario');
+  }
 }

@@ -11,7 +11,7 @@ class Cliente extends Model
 
   protected $fillable = [
     'id_documento_identificacion',
-    'identificacacion',
+    'identificacion',
     'dv',
     'empresa',
     'nombre_comercial',
@@ -30,5 +30,9 @@ class Cliente extends Model
   public function users()
   {
     return $this->belongsTo(User::class, 'id_usuario');
+  }
+
+  public function facturaElectronica() {
+    return $this->hasMany(FacturaElectronica::class, 'id_cliente');
   }
 }

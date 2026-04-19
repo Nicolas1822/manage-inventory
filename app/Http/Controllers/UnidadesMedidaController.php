@@ -34,7 +34,7 @@ class UnidadesMedidaController extends Controller
     $unidadesMedida = json_decode($response->body(), true);
     $message = 'No hay unidades de medida para actualizar';
 
-    foreach($unidadesMedida['data'] as $unidad) {
+    foreach ($unidadesMedida['data'] as $unidad) {
       $getUnidadMedida = UnidadDeMedida::find($unidad['id']);
       if (!$getUnidadMedida) {
         UnidadDeMedida::create([

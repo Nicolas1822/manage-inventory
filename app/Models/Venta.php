@@ -12,11 +12,19 @@ class Venta extends Model
   protected $table = 'venta';
 
   protected $fillable = [
+    'codigo_venta',
     'fecha_venta',
-    'total_venta'
+    'total_venta',
+    'estado_factura_electroinca'
   ];
 
-  public function ventaDetalle() {
+  public function ventaDetalle()
+  {
     return $this->hasMany(VentaDetalle::class, 'id_venta');
+  }
+
+  public function facturaElectronica()
+  {
+    return $this->hasOne(FacturaElectronica::class, 'id_venta');
   }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\FacturaElectronicaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,5 +15,15 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+  return view('welcome');
 });
+
+Route::get(
+  '/factura-electronica/{numeroFactura}/descargar',
+  [FacturaElectronicaController::class, 'downloadFactura']
+)->name('factura-electronica.descargar');
+
+Route::get(
+  '/factura-electronica/{numeroFactura}/',
+  [FacturaElectronicaController::class, 'showFactura']
+)->name('factura-electronica.show');

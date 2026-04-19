@@ -25,4 +25,9 @@ class RangosNumeracion extends Model
     'is_expired',
     'is_active'
   ];
+
+  public function facturaElectronica()
+  {
+    return $this->hasMany(FacturaElectronica::class, 'id_rango_numeracion');
+  }
 }

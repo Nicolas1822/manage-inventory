@@ -19,7 +19,7 @@ class ClienteResource extends Resource
 {
   protected static ?string $model = Cliente::class;
 
-  protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+  protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
   protected static ?int $navigationSort = 5;
 
@@ -45,7 +45,7 @@ class ClienteResource extends Resource
           ->searchable()
           ->required()
           ->live(),
-        Forms\Components\TextInput::make('identificacacion')
+        Forms\Components\TextInput::make('identificacion')
           ->label('Numero de identificacion')
           ->required()
           ->maxLength(12),
@@ -101,7 +101,7 @@ class ClienteResource extends Resource
         Tables\Columns\TextColumn::make('id_documento_identificacion')
           ->numeric()
           ->sortable(),
-        Tables\Columns\TextColumn::make('identificacacion')
+        Tables\Columns\TextColumn::make('identificacion')
           ->searchable(),
         Tables\Columns\TextColumn::make('dv')
           ->numeric()

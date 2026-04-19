@@ -13,7 +13,7 @@ return new class extends Migration {
     Schema::create('clientes', function (Blueprint $table) {
       $table->id();
       $table->integer('id_documento_identificacion');
-      $table->string('identificacacion');
+      $table->string('identificacion');
       $table->integer('dv')->nullable();
       $table->string('empresa')->nullable();
       $table->string('nombre_comercial')->nullable();
@@ -22,7 +22,7 @@ return new class extends Migration {
       $table->string('email')->nullable();
       $table->string('n_celular')->nullable();
       $table->integer('tipo_organizacion');
-      $table->integer('id_tributo');
+      $table->foreignId('id_tributo')->constrained('tributos');
       $table->foreignId('id_municipio')->constrained('municipios');
       $table->timestamps();
     });

@@ -26,6 +26,7 @@ class InventoryPanelProvider extends PanelProvider
             ->default()
             ->id('inventory')
             ->path('inventory')
+            ->brandName('Manage Inventory')
             ->login()
             ->colors([
                 'primary' => Color::Amber,
