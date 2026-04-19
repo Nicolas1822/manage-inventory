@@ -18,7 +18,9 @@ class ProductosPorAgotarse extends BaseWidget
   {
     return $table
       ->query(
-        Inventario::query()->whereBetween('cantidad_disponible', [1, 5])
+        Inventario::query()
+          ->whereBetween('cantidad_disponible', [1, 5])
+          ->where('id_usuario', auth()->id())
       )
       ->columns([
         TextColumn::make('producto.nombre_producto')

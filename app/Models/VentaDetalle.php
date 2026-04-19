@@ -18,15 +18,18 @@ class VentaDetalle extends Model
     'cantidad_vendida_producto'
   ];
 
-  public function users() {
+  public function users()
+  {
     return $this->belongsTo(User::class, 'id_usuario');
   }
 
-  public function venta() {
+  public function venta()
+  {
     return $this->belongsTo(Venta::class, 'id_venta');
   }
 
-  public function producto() {
+  public function producto()
+  {
     return $this->belongsTo(Producto::class, 'id_producto');
-}
+  }
 }

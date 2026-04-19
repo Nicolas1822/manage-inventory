@@ -11,9 +11,9 @@ return new class extends Migration {
    */
   public function up(): void
   {
-    if (Schema::hasTable('venta_detalle')) {
-      Schema::table('venta_detalle', function (Blueprint $table) {
-        $table->unsignedInteger('cantidad_vendida_producto')->nullable()->after('id_usuario');
+    if (Schema::hasTable('clientes')) {
+      Schema::table('clientes', function (Blueprint $table) {
+        $table->foreignId('id_usuario')->after('id_municipio')->constrained('users');
       });
     }
   }

@@ -18,19 +18,44 @@ class Producto extends Model
     'marca',
     'cantidad_total_inicial',
     'cantidad_vendida',
+    'porcentaje_descuento',
+    'porcentaje_impuesto',
+    'codigo_estandar_id',
+    'excluido',
+    'id_tributo',
+    'id_unidad_medida',
     'id_factura'
   ];
+
+  protected function casts(): array
+  {
+    return [
+      'excluido' => 'boolean',
+    ];
+  }
 
   public function inventario()
   {
     return $this->hasOne(Inventario::class, 'id_producto');
   }
 
-  public function factura() {
+  public function factura()
+  {
     return $this->belongsTo(Factura::class, 'id_factura');
   }
 
-  public function ventaDetalle() {
+  public function ventaDetalle()
+  {
     return $this->hasMany(VentaDetalle::class, 'id_producto');
+  }
+
+  public function tributo()
+  {
+    return $this->belongsTo(Tributo::class, 'id_tributo');
+  }
+
+  public function unidadDeMedida()
+  {
+    return $this->belongsTo(UnidadDeMedida::class, 'id_unidad_medida');
   }
 }

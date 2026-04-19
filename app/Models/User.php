@@ -43,15 +43,27 @@ class User extends Authenticatable
     'password' => 'hashed',
   ];
 
-  public function inventario() {
+  public function inventario()
+  {
     return $this->hasOne(Inventario::class, 'id_usuario');
   }
 
-  public function factura() {
+  public function factura()
+  {
     return $this->hasMany(Factura::class, 'id_usuario');
   }
 
-  public function ventaDetalle() {
+  public function ventaDetalle()
+  {
     return $this->hasMany(VentaDetalle::class, 'id_venta');
-}
+  }
+
+  public function clientes()
+  {
+    return $this->hasMany(Cliente::class, 'id_usuario');
+  }
+
+  public function facturaElectronica() {
+    return $this->hasMany(FacturaElectronica::class, 'id_usuario');
+  }
 }

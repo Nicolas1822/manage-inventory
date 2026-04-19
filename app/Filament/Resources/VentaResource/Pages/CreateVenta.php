@@ -47,7 +47,9 @@ class CreateVenta extends CreateRecord
 
   protected function crearVenta(array $data)
   {
+    $codigoVenta = rand(1000000, 2000000);
     $venta = Venta::create([
+      'codigo_venta' => $codigoVenta,
       'fecha_venta' => $data['fecha_venta'],
       'total_venta' => $data['total_venta'],
     ]);
