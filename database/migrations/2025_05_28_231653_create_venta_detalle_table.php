@@ -15,6 +15,7 @@ return new class extends Migration {
       $table->foreignId('id_venta')->constrained('venta');
       $table->foreignId('id_producto')->constrained('producto');
       $table->foreignId('id_usuario')->constrained('users');
+      $table->unsignedInteger('cantidad_vendida_producto')->nullable();
       $table->timestamps();
     });
   }

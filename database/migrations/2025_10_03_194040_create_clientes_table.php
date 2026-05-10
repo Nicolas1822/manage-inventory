@@ -24,6 +24,7 @@ return new class extends Migration {
       $table->integer('tipo_organizacion');
       $table->foreignId('id_tributo')->constrained('tributos');
       $table->foreignId('id_municipio')->constrained('municipios');
+      $table->foreignId('id_usuario')->constrained('users');
       $table->timestamps();
     });
   }
