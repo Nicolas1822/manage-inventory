@@ -28,6 +28,9 @@ use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
 
 class VentaResource extends Resource
 {
@@ -288,6 +291,33 @@ class VentaResource extends Resource
         Tables\Columns\TextColumn::make('total_venta')
           ->numeric()
           ->sortable(),
+        Tables\Columns\TextColumn::make('productos')
+          ->label('Productos')
+          ->default('Mostrar')
+          ->badge()
+          ->color('primary')
+          ->icon('heroicon-m-eye')
+          ->action(
+            Tables\Actions\Action::make('ver_productos')
+              ->label('Productos de la Venta')
+              ->modalHeading('Productos de la Venta')
+              ->modalSubmitAction(false)
+              ->modalCancelActionLabel('Cerrar')
+              ->infolist([
+                RepeatableEntry::make('ventaDetalle')
+                  ->label(false)
+                  ->schema([
+                    TextEntry::make('producto.nombre_producto')
+                      ->label('Producto'),
+                    TextEntry::make('cantidad_vendida_producto')
+                      ->label('Cantidad'),
+                    TextEntry::make('producto.precio_unidad')
+                      ->label('Precio Unitario')
+                      ->money('COP'),
+                  ])
+                  ->columns(3)
+              ])
+          ),
         Tables\Columns\TextColumn::make('updated_at')
           ->dateTime()
           ->sortable()
@@ -295,16 +325,8 @@ class VentaResource extends Resource
       ])
       ->modifyQueryUsing(function (Builder $query) {
         return $query
-          ->join('venta_detalle', 'venta.id', '=', 'venta_detalle.id_venta')
-          ->select(
-            'venta.id',
-            'venta.fecha_venta',
-            'venta.total_venta',
-            'venta.updated_at',
-            'venta_detalle.id_usuario'
-          )
-          ->where('venta_detalle.id_usuario', auth()->id())
-          ->orderBy('venta.fecha_venta', 'desc');
+          ->whereHas('ventaDetalle', fn($query) => $query->where('id_usuario', auth()->id()))
+          ->orderBy('fecha_venta', 'desc');
       })
       ->filters([
         Filter::make('fecha_venta')
