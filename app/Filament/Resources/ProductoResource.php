@@ -123,6 +123,11 @@ class ProductoResource extends Resource
           ->label('Codigo factura')
           ->formatStateUsing(fn($state): string => str_replace('.', '', $state))
           ->sortable(),
+        Tables\Columns\TextColumn::make('estado_disponibilidad')
+          ->label('Disponibilidad')
+          ->badge()
+          ->formatStateUsing(fn(int $state): string => $state === 1 ? 'Agotado' : 'Disponible')
+          ->color(fn(int $state): string => $state === 1 ? 'danger' : 'success'),
         Tables\Columns\TextColumn::make('created_at')
           ->dateTime()
           ->sortable()
@@ -140,6 +145,7 @@ class ProductoResource extends Resource
             'producto.precio_unidad',
             'producto.marca',
             'producto.cantidad_total_inicial',
+            'producto.estado_disponibilidad',
             'producto.created_at',
             'factura.codigo_factura'
           );
