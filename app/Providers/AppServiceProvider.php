@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Producto;
+use App\Models\Factura;
 use App\Observers\ProductoObserver;
+use App\Observers\FacturaObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -22,5 +24,6 @@ class AppServiceProvider extends ServiceProvider
   public function boot(): void
   {
     Producto::observe(ProductoObserver::class);
+    Factura::observe(FacturaObserver::class);
   }
 }

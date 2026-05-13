@@ -22,6 +22,7 @@ class Producto extends Model
     'porcentaje_impuesto',
     'codigo_estandar_id',
     'excluido',
+    'estado_disponibilidad',
     'id_tributo',
     'id_unidad_medida',
     'id_factura'

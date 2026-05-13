@@ -18,6 +18,13 @@ return new class extends Migration {
       $table->string('marca');
       $table->unsignedInteger('cantidad_total_inicial');
       $table->unsignedInteger('cantidad_vendida')->nullable();
+      $table->unsignedFloat('porcentaje_descuento');
+      $table->string('porcentaje_impuesto');
+      $table->unsignedInteger('codigo_estandar_id');
+      $table->boolean('excluido');
+      $table->boolean('estado_disponibilidad')->default(false)->comment("0 producto en stock, 1 producto agotado");
+      $table->foreignId('id_tributo')->nullable(true)->constrained('tributos');
+      $table->foreignId('id_unidad_medida')->nullable(true)->constrained('unidades_de_medida');
       $table->foreignId('id_factura')->constrained('factura');
       $table->timestamps();
     });
