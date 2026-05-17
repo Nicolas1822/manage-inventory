@@ -12,9 +12,10 @@ return new class extends Migration {
   {
     Schema::create('municipios', function (Blueprint $table) {
       $table->id();
-      $table->string('code');
-      $table->string('name');
-      $table->string('department');
+      $table->string('municipality_code');
+      $table->string('municipality_name');
+      $table->string('department_code');
+      $table->string('department_name');
       $table->timestamps();
     });
   }
