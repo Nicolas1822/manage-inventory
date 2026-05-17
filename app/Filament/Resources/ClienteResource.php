@@ -6,6 +6,7 @@ use App\Filament\Resources\ClienteResource\Pages;
 use App\Filament\Resources\ClienteResource\RelationManagers;
 use App\Models\Cliente;
 use App\Models\Municipio;
+use App\Models\Tributo;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -80,14 +81,12 @@ class ClienteResource extends Resource
           ->label('Numero de celular')
           ->maxLength(13),
         Forms\Components\Select::make('id_tributo')
+          ->options(Tributo::query()->pluck('name', 'id'))
           ->label('Tributo')
-          ->options([
-            '18' => 'IVA',
-            '21' => 'No aplica *'
-          ])
+          ->searchable()
           ->required(),
         Forms\Components\Select::make('id_municipio')
-          ->options(Municipio::query()->pluck('name', 'id'))
+          ->options(Municipio::query()->pluck('municipality_name', 'id'))
           ->label('Municipio')
           ->searchable()
           ->required(),

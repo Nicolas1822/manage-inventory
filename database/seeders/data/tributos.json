@@ -1,0 +1,14 @@
+{
+  "tributos": [
+    {
+      "code": "01",
+      "name": "IVA",
+      "description": "Impuesto sobre el Valor Agregado"
+    },
+    {
+      "code": "ZZ",
+      "name": "No aplica *",
+      "description": "No aplica"
+    }
+  ]
+}

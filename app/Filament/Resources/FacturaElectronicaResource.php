@@ -147,7 +147,7 @@ class FacturaElectronicaResource extends Resource
               ])
               ->required(),
             Select::make('id_municipio')
-              ->options(Municipio::query()->pluck('name', 'id'))
+              ->options(Municipio::query()->pluck('municipality_name', 'id'))
               ->label('Municipio')
               ->searchable()
               ->required(),
