@@ -142,8 +142,8 @@ class FacturaElectronicaResource extends Resource
             Select::make('id_tributo')
               ->label('Tributo')
               ->options([
-                '18' => 'IVA',
-                '21' => 'No aplica *'
+                '1' => 'IVA',
+                '2' => 'No aplica *'
               ])
               ->required(),
             Select::make('id_municipio')
