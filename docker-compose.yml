@@ -49,6 +49,7 @@ services:
     image: mysql:8.0
     container_name: inventory_mysql
     restart: unless-stopped
+    command: --log-bin-trust-function-creators=1
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-manage_inventory_db}
       MYSQL_USER: ${DB_USERNAME:-laravel}

@@ -14,12 +14,12 @@ return new class extends Migration {
       $table->id();
       $table->string('document');
       $table->string('prefix', 5);
-      $table->unsignedInteger('from');
-      $table->unsignedBigInteger('to');
+      $table->unsignedInteger('from')->nullable();
+      $table->unsignedBigInteger('to')->nullable();
       $table->unsignedInteger('current');
       $table->string('resolution_number')->nullable();
-      $table->date('start_date');
-      $table->date('end_date');
+      $table->date('start_date')->nullable();
+      $table->date('end_date')->nullable();
       $table->string('technical_key')->nullable();
       $table->unsignedInteger('is_expired');
       $table->unsignedInteger('is_active');

@@ -40,11 +40,11 @@ return new class extends Migration {
     });
   }
 
-  /**
-   * Reverse the migrations.
-   */
   public function down(): void
   {
-    //
+    Schema::table('venta_detalle', function (Blueprint $table) {
+      DB::unprepared('DROP TRIGGER IF EXISTS update_before_delete_cantidad_vendida');
+      DB::unprepared('DROP TRIGGER IF EXISTS update_before_delete_cantidad_disponible');
+    });
   }
 };

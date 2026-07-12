@@ -18,7 +18,7 @@ return new class extends Migration {
             FOR EACH ROW
             BEGIN
                 DECLARE diferencia INT;
-                SET diferencia = NEW.cantidad_vendida_producto - OLD.cantidad_vendida_producto;
+                SET diferencia = CAST(NEW.cantidad_vendida_producto AS SIGNED) - CAST(OLD.cantidad_vendida_producto AS SIGNED);
 
                 UPDATE producto
                 SET cantidad_vendida = cantidad_vendida + diferencia
@@ -33,7 +33,7 @@ return new class extends Migration {
             BEGIN
                 UPDATE inventario
                 SET
-                cantidad_disponible = cantidad_disponible - (NEW.cantidad_vendida_producto - OLD.cantidad_vendida_producto)
+                cantidad_disponible = cantidad_disponible - (CAST(NEW.cantidad_vendida_producto AS SIGNED) - CAST(OLD.cantidad_vendida_producto AS SIGNED))
                 WHERE
                 id_producto = NEW.id_producto;
             END;'
@@ -41,13 +41,11 @@ return new class extends Migration {
     });
   }
 
-  /**
-   * Reverse the migrations.
-   */
   public function down(): void
   {
     Schema::table('venta_detalle', function (Blueprint $table) {
-      //
+      DB::unprepared('DROP TRIGGER IF EXISTS trg_after_update_venta_detalle_update_cantidad_vendida');
+      DB::unprepared('DROP TRIGGER IF EXISTS trg_after_update_venta_detalle_update_cantidad_disponible');
     });
   }
 };
