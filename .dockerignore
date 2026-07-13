@@ -1,0 +1,42 @@
+# Version Control
+.git
+.gitignore
+.gitattributes
+
+# IDE and Editor
+.idea
+.vscode
+.fleet
+.editorconfig
+GEMINI.md
+
+# Dependencies (installed inside container)
+vendor
+node_modules
+
+# Docker (avoid recursive builds)
+docker-compose.yml
+docker-compose.override.yml
+
+# Environment files
+.env
+.env.backup
+.env.production
+
+# Testing
+.phpunit.cache
+.phpunit.result.cache
+phpunit.xml
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+
+# Storage (will be generated inside container)
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*

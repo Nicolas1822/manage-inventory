@@ -1,0 +1,87 @@
+services:
+  # -------------------------------------------------------
+  # PHP Application (Laravel + Filament v3)
+  # -------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        USER_ID: ${DOCKER_USER_ID:-1000}
+        GROUP_ID: ${DOCKER_GROUP_ID:-1000}
+    container_name: inventory_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - vendor_data:/var/www/html/vendor
+      - node_modules_data:/var/www/html/node_modules
+    networks:
+      - inventory_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+
+  # -------------------------------------------------------
+  # Nginx Web Server
+  # -------------------------------------------------------
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: inventory_nginx
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - inventory_network
+    depends_on:
+      - app
+
+  # -------------------------------------------------------
+  # MySQL 8.0 Database
+  # -------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: inventory_mysql
+    restart: unless-stopped
+    command: --log-bin-trust-function-creators=1
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-manage_inventory_db}
+      MYSQL_USER: ${DB_USERNAME:-laravel}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+    ports:
+      - "${DB_EXTERNAL_PORT:-3307}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - inventory_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootsecret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# -------------------------------------------------------
+# Persistent Volumes
+# -------------------------------------------------------
+volumes:
+  mysql_data:
+    driver: local
+  vendor_data:
+    driver: local
+  node_modules_data:
+    driver: local
+
+# -------------------------------------------------------
+# Network
+# -------------------------------------------------------
+networks:
+  inventory_network:
+    driver: bridge
