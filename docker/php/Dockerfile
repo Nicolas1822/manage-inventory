@@ -51,7 +51,11 @@ WORKDIR /var/www/html
 # Copy custom PHP configuration
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
 
-# Set ownership
-RUN chown -R www-data:www-data /var/www/html
+# Create composer and npm cache directories with correct permissions and configure Git
+RUN mkdir -p /var/www/.composer /var/www/.npm \
+    && chown -R www-data:www-data /var/www/.composer /var/www/.npm \
+    && git config --global --add safe.directory /var/www/html
 
 USER www-data
+
+
