@@ -61,6 +61,7 @@ echo -e "${GREEN}✅ Contenedores levantados correctamente.${NC}"
 # Step 4: Install PHP dependencies
 # -------------------------------------------------------
 echo -e "${YELLOW}[4/7]${NC} Instalando dependencias de Composer..."
+docker compose exec -u root app chown -R www-data:www-data /var/www/html/vendor /var/www/html/node_modules
 docker compose exec app composer install
 
 echo -e "${GREEN}✅ Dependencias de PHP instaladas.${NC}"
