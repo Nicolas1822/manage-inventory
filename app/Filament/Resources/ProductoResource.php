@@ -30,7 +30,11 @@ class ProductoResource extends Resource
       ->schema([
         Forms\Components\TextInput::make('lote_producto')
           ->required()
-          ->numeric(),
+          ->numeric()
+          ->minValue(1)
+          ->validationMessages([
+            'min' => 'El campo :attribute debe ser al menos :min.',
+          ]),
         Forms\Components\TextInput::make('nombre_producto')
           ->required()
           ->maxLength(255),
@@ -39,14 +43,22 @@ class ProductoResource extends Resource
           ->prefix('$')
           ->mask(RawJs::make('$money($input)'))
           ->stripCharacters(characters: ',')
-          ->numeric(),
+          ->numeric()
+          ->minValue(100)
+          ->validationMessages([
+            'min' => 'El campo :attribute debe ser al menos :min.',
+          ]),
         Forms\Components\TextInput::make('marca')
           ->required()
           ->maxLength(255),
         Forms\Components\TextInput::make('cantidad_total_inicial')
           ->label('Unidades')
           ->numeric()
-          ->required(),
+          ->minValue(10)
+          ->required()
+          ->validationMessages([
+            'min' => 'El producto debe contar con un minimo de :min unidades.',
+          ]),
         Forms\Components\Select::make('id_unidad_medida')
           ->label('Unidad de medida')
           ->options(UnidadDeMedida::query()->pluck('name', 'id'))
