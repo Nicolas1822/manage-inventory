@@ -24,6 +24,8 @@ class MasVendidos extends BaseWidget
                 Producto::query()
                     ->select('producto.*')
                     ->join('venta_detalle', 'producto.id', '=', 'venta_detalle.id_producto')
+                    ->join('venta', 'venta_detalle.id_venta', '=', 'venta.id')
+                    ->where('venta_detalle.id_usuario', auth()->id())
                     ->selectRaw('SUM(venta_detalle.cantidad_vendida_producto) as total_vendido')
                     ->selectRaw('SUM(venta_detalle.cantidad_vendida_producto * producto.precio_unidad) as monto_total')
                     ->groupBy('producto.id')
@@ -62,7 +64,7 @@ class MasVendidos extends BaseWidget
                     ->default(date('m'))
                     ->query(function (Builder $query, array $data) {
                         if (!empty($data['value'])) {
-                            $query->whereMonth('venta_detalle.created_at', $data['value']);
+                            $query->whereMonth('venta.fecha_venta', $data['value']);
                         }
                     }),
 
@@ -75,7 +77,7 @@ class MasVendidos extends BaseWidget
                     ->default(date('Y'))
                     ->query(function (Builder $query, array $data) {
                         if (!empty($data['value'])) {
-                            $query->whereYear('venta_detalle.created_at', $data['value']);
+                            $query->whereYear('venta.fecha_venta', $data['value']);
                         }
                     }),
             ])
