@@ -40,7 +40,6 @@ GEMINI.md
 .claude/skills/orient
 .claude/skills/parallel
 .claude/skills/plan
-.claude/skills/python
 .claude/skills/review
 .claude/skills/sdd
 .claude/skills/sdd-init
@@ -57,12 +56,17 @@ GEMINI.md
 .claude/skills/.rsc-state.json
 .claude/agents/developer.md
 .claude/agents/finding-verifier.md
-.claude/agents/python-reviewer.md
+.claude/agents/php-reviewer.md
 .claude/agents/refuter-correctness.md
 .claude/agents/refuter-security.md
 .claude/agents/refuter-tests.md
 .claude/commands/checkpoint.md
 .claude/commands/learn.md
-.claude/commands/python-review.md
+.claude/commands/php-review.md
+.claude/commands/laravel-review.md
 .claude/commands/resume-session.md
 .claude/commands/save-session.md
+.claude/skills/docker
+.claude/skills/laravel
+.claude/skills/mysql
+.claude/skills/php

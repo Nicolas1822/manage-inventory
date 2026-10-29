@@ -13,16 +13,19 @@
     "decision-challenge",
     "deprecation",
     "design",
+    "docker",
     "fable-operator",
     "ftd",
     "harness",
     "idea-refinement",
     "implement",
     "init",
+    "laravel",
+    "mysql",
     "orient",
     "parallel",
+    "php",
     "plan",
-    "python",
     "review",
     "sdd",
     "sdd-init",
@@ -40,7 +43,7 @@
   "agents": [
     "developer",
     "finding-verifier",
-    "python-reviewer",
+    "php-reviewer",
     "refuter-correctness",
     "refuter-security",
     "refuter-tests"
@@ -49,8 +52,9 @@
   "catalogVersion": "3.6.0",
   "tier": null,
   "optOuts": [
-    "trunk-open",
-    "knowledge-sync"
+    "gitmoji",
+    "knowledge-sync",
+    "trunk-open"
   ],
   "gitPermissions": true,
   "onboarding": {
@@ -873,6 +877,11 @@
       "02-DOCS/wiki/harness/decisions.md": "f8f53b9d31b95ab054d2ee2f5c948446a13c1904c3dc4edd195f108c4cbd85fb",
       "02-DOCS/wiki/harness/installation-plan.md": "6db830ffc9e90bc45d87a2dd34144192343b4ba38ea03a3379ab1cb92d917e45",
       "02-DOCS/wiki/harness/user-profile.md": "ecf813730c0f647d298d08d63c641329cf1560785d0a3d1a807b59aa361591f9"
+    },
+    "maintenanceDrift": {
+      "action": "add laravel,php,mysql,docker",
+      "recordedAt": "2026-10-29T21:11:26.515Z",
+      "requiresReassessment": true
     }
   }
 }
