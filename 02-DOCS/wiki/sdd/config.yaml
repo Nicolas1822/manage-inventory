@@ -1,0 +1,79 @@
+version: 1
+# Calibrado por sdd-init el 2026-10-29. Detección manual: rsc onboard había detectado
+# "node, python" por error (no hay requirements.txt; package.json solo sirve a Vite).
+project:
+  root: .
+  stacks: [php, laravel, filament, livewire, mysql, vite, docker]
+  package_managers: [composer, npm]
+  monorepo: false
+  signals:
+    - composer.json: php ^8.1, laravel/framework ^10.10, filament/filament ^3.3, laravel/sanctum ^3.3
+    - composer.json require-dev: phpunit/phpunit ^10.1, laravel/pint ^1.0, mockery, faker
+    - package.json: vite ^5 + laravel-vite-plugin (solo assets; scripts dev/build)
+    - docker-compose.yml: app (docker/php/Dockerfile, workdir /var/www/html, USER www-data), nginx, mysql 8.0, n8n
+    - excel: openspout/openspout (XLSX writer) en app/Services/ReporteVentasService.php
+    - n8n: API en routes/api.php protegida por middleware n8n.auth (header X-API-KEY)
+    - estándares del proyecto: 02-DOCS/wiki/sdd/constitution.md (GEMINI.md eliminado)
+    - sin CI (.github/ no existe)
+sdd:
+  artifact_store: 02-DOCS/wiki/sdd
+  execution_mode: interactive
+  registry_path: .rsc/skill-registry.json
+  review_budget:
+    line_budget: 400
+    file_budget: 12
+  delivery_strategy:
+    default: ask-on-risk
+testing:
+  # false por decisión del dueño (constitución v1.0.0, principio 6): el merge exige la suite
+  # completa en verde, pero no un test nuevo por cambio ni TDD red→green obligatorio.
+  strict_tdd: false
+  runners: [phpunit]
+  # Los tests corren dentro del contenedor "app" contra el MySQL de desarrollo
+  # (manage_inventory_db). phpunit.xml NO usa sqlite en memoria. Por eso todo test que
+  # toque la BD debe usar DatabaseTransactions; RefreshDatabase / DatabaseMigrations
+  # borrarían los datos de desarrollo y están prohibidos (ver constitución).
+  commands:
+    apply:
+      - docker compose exec -T app php artisan migrate
+      - docker compose exec -T app ./vendor/bin/pint --dirty
+    verify:
+      - docker compose exec -T app php artisan test
+      - docker compose exec -T app ./vendor/bin/pint --test --dirty
+  baseline:
+    # 2026-10-29: php artisan test → 14 passed (51 assertions).
+    # pint --test sobre todo el repo → 66 archivos con fallos previos (indentación 2 vs 4
+    # espacios). Por eso verify usa --dirty: solo exige estilo en los archivos cambiados.
+    tests: "14 passed (51 assertions)"
+    pint_full_repo_failures: 66
+phase_rules:
+  proposal: optional-on-ambiguity
+  specify: requires intent or proposal
+  plan: requires spec
+  tasks: requires plan and spec
+  analyze: requires spec plan tasks
+  implement: requires analyze pass, strict_tdd when testing.strict_tdd is true
+  verify: requires spec tasks evidence
+  archive: requires verify record and review/ship outcome
+models:
+  enabled: false              # opt-in master switch; false = honor session model, announce nothing
+  provider: anthropic         # which provider the tiers below resolve to
+  tiers:
+    heavy: claude-opus-4-8
+    balanced: claude-sonnet-4-6
+    light: claude-haiku-4-5-20251001
+  phases:
+    constitution: heavy
+    specify: balanced
+    clarify: balanced
+    plan: heavy
+    tasks: balanced
+    analyze: heavy
+    implement: balanced
+    verify: balanced
+    review: heavy
+    ship: light
+    debug: heavy
+    worktrees: light
+    sdd-init: light
+  overrides: {}               # per-phase tier overrides set by the user
