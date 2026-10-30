@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\PerteneceANegocio;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Producto extends Model
 {
   use HasFactory;
+  use PerteneceANegocio;
 
   protected $table = 'producto';
 
   protected $fillable = [
+    'id_sesion',
     'lote_producto',
     'nombre_producto',
     'precio_unidad',

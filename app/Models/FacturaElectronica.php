@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\PerteneceANegocio;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,7 +12,10 @@ class FacturaElectronica extends Model
 
   use HasFactory;
 
+  use PerteneceANegocio;
+
   public $fillable = [
+    'id_sesion',
     'id_rango_numeracion',
     'documento',
     'codigo_referencia',

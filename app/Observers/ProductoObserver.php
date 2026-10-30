@@ -14,6 +14,7 @@ class ProductoObserver
   {
     Inventario::create([
         'id_producto' => $producto->id,
+        'id_sesion' => $producto->id_sesion,
         'id_usuario' => auth()->id(),
         'id_factura' => $producto->id_factura,
         'cantidad_disponible' => $producto->cantidad_total_inicial,

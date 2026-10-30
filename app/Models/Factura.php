@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\PerteneceANegocio;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,7 +12,9 @@ class Factura extends Model
 
   use HasFactory;
 
-  protected $fillable = ['codigo_factura', 'fecha_emision', 'total_factura', 'id_usuario'];
+  use PerteneceANegocio;
+
+  protected $fillable = ['id_sesion', 'codigo_factura', 'fecha_emision', 'total_factura', 'id_usuario'];
 
   public function producto()
   {

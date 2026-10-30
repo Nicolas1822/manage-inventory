@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\PerteneceANegocio;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Producto;
@@ -12,7 +13,10 @@ class Inventario extends Model
 
   use HasFactory;
 
+  use PerteneceANegocio;
+
   protected $fillable = [
+    'id_sesion',
     'cantidad_disponible',
     'id_producto',
     'id_usuario',
