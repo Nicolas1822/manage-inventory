@@ -191,13 +191,13 @@ class ProductoResource extends Resource
                     ->preload(),
             ])
             ->actions([
-            Tables\Actions\EditAction::make(),
-        ])
+                Tables\Actions\EditAction::make(),
+            ])
             ->bulkActions([
-            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-            ]),
-        ]);
+                ]),
+            ]);
     }
 
     public static function getRelations(): array

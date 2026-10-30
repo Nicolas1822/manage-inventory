@@ -215,23 +215,23 @@ class FacturaElectronicaResource extends Resource
                     }),
             ])
             ->actions([
-            Tables\Actions\Action::make('Ver')
+                Tables\Actions\Action::make('Ver')
                     ->label('Ver')
                     ->icon('heroicon-o-eye')
                     ->tooltip('Ver Factura')
                     ->url(fn ($record) => route('factura-electronica.show', $record->numero_factura))
                     ->openUrlInNewTab(),
-            Tables\Actions\Action::make('Descargar')
+                Tables\Actions\Action::make('Descargar')
                     ->label('Descargar')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->tooltip('Descargar factura')
                     ->url(fn ($record) => route('factura-electronica.descargar', $record->numero_factura)),
-        ])
+            ])
             ->bulkActions([
-            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-            ]),
-        ]);
+                ]),
+            ]);
     }
 
     public static function getRelations(): array

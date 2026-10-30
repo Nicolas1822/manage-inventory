@@ -16,7 +16,7 @@ trait PerteneceANegocio
 {
     public static function bootPerteneceANegocio(): void
     {
-        static::addGlobalScope(new NegocioScope());
+        static::addGlobalScope(new NegocioScope);
 
         // Con usuario autenticado, el registro siempre va a su negocio activo,
         // aunque llegue otro id_sesion. Sin usuario (seeders, consola) se respeta
@@ -29,7 +29,7 @@ trait PerteneceANegocio
             }
 
             if (! $negocio->tieneNegocio()) {
-                throw new SinNegocioException();
+                throw new SinNegocioException;
             }
 
             $model->setAttribute('id_sesion', $negocio->id());

@@ -140,7 +140,7 @@ class VentaResource extends Resource
                                                     $set('agregar_producto_id', null);
                                                     $set('precio_unidad', null);
                                                 }),
-                                    ])
+                                        ])
                                             ->alignCenter(),
                                     ]),
                             ]),
@@ -148,12 +148,12 @@ class VentaResource extends Resource
                         Card::make()
                             ->columnSpan(2)
                             ->schema([
-                            Section::make('Productos Agregados')
-                                ->schema([
-                                    Repeater::make('productos')
-                                        ->label(false)
-                                        ->defaultItems(0)
-                                        ->schema([
+                                Section::make('Productos Agregados')
+                                    ->schema([
+                                        Repeater::make('productos')
+                                            ->label(false)
+                                            ->defaultItems(0)
+                                            ->schema([
                                                 Hidden::make('id_producto')
                                                     ->required(),
 
@@ -172,104 +172,104 @@ class VentaResource extends Resource
                                                     ->minValue(1)
                                                     ->default(1)
                                                     ->live(),
-                                        ])
-                                        ->columns(3)
-                                        ->rule(['array', 'min:1'])
-                                        ->validationMessages([
+                                            ])
+                                            ->columns(3)
+                                            ->rule(['array', 'min:1'])
+                                            ->validationMessages([
                                                 'min' => 'Agrega al menos un producto para realizar la venta',
-                                        ])
-                                        ->hint(function (Get $get): ?string {
-                                            if (count((array) $get('productos')) === 0) {
-                                                return 'Debes agregar al menos un producto para realizar la venta';
-                                            }
-
-                                            return null;
-                                        })
-                                        ->hintColor('danger')
-                                        ->columnSpanFull()
-                                        ->reorderable(false)
-                                        ->addable(false)
-                                        ->live()
-                                        ->afterStateUpdated(function (Get $get, Set $set) {
-                                            self::modificarTotal($get, $set);
-                                        })
-                                        ->deleteAction(
-                                            fn (Action $action) => $action->after(fn (Get $get, Set $set) => self::modificarTotal($get, $set))
-                                        )
-                                        ->loadStateFromRelationshipsUsing(function (Repeater $component, ?Venta $record) {
-                                            if ($record) {
-                                                $productos = $record->ventaDetalle->map(function (VentaDetalle $vd) {
-                                                    return [
-                                                        'id_producto' => $vd->id_producto,
-                                                        'nombre' => $vd->producto->nombre_producto,
-                                                        'precio' => number_format($vd->producto->precio_unidad, 0, '', ','),
-                                                        'cantidad_vendida_producto' => $vd->cantidad_vendida_producto,
-                                                    ];
-                                                })->toArray();
-
-                                                $component->state($productos);
-                                            }
-                                        })
-                                        ->saveRelationshipsUsing(function (Venta $record, array $state) {
-                                            $nuevosDetalles = collect($state)->keyBy('id_producto');
-                                            $viejosDetalles = $record->ventaDetalle->keyBy('id_producto');
-                                            foreach ($nuevosDetalles as $idProducto => $dataDetalleNuevo) {
-                                                $detalleViejo = $viejosDetalles->get($idProducto);
-                                                $inventario = Inventario::query()
-                                                    ->join('producto', 'inventario.id_producto', '=', 'producto.id')
-                                                    ->select('producto.nombre_producto', 'inventario.cantidad_disponible')
-                                                    ->where('inventario.id_producto', $dataDetalleNuevo['id_producto'])
-                                                    ->first();
-                                                if ($detalleViejo) {
-                                                    $stockDisponibleReal = ($inventario?->cantidad_disponible ?? 0) + $detalleViejo['cantidad_vendida_producto'];
-                                                    if ($stockDisponibleReal < (int) $dataDetalleNuevo['cantidad_vendida_producto']) {
-                                                        Notification::make()
-                                                            ->title('Inventario insuficiente')
-                                                            ->body("No hay suficiente stock para el producto {$inventario->nombre_producto}. Disponibles: ".($inventario?->cantidad_disponible ?? 0))
-                                                            ->danger()
-                                                            ->send();
-                                                        throw new Halt;
-                                                    }
-                                                    $detalleViejo->update($dataDetalleNuevo);
-                                                } else {
-                                                    if ($inventario->cantidad_disponible < (int) $dataDetalleNuevo['cantidad_vendida_producto']) {
-                                                        Notification::make()
-                                                            ->title('Inventario insuficiente')
-                                                            ->body("No hay suficiente stock para el producto {$inventario->nombre_producto}. Disponibles: ".($inventario?->cantidad_disponible ?? 0))
-                                                            ->danger()
-                                                            ->send();
-                                                        throw new Halt;
-                                                    }
-                                                    $record->ventaDetalle()->create($dataDetalleNuevo);
-                                                    self::modificarCantidadProductoInventario($dataDetalleNuevo);
+                                            ])
+                                            ->hint(function (Get $get): ?string {
+                                                if (count((array) $get('productos')) === 0) {
+                                                    return 'Debes agregar al menos un producto para realizar la venta';
                                                 }
-                                            }
 
-                                            foreach ($viejosDetalles as $idProducto => $detalleViejo) {
-                                                if (! $nuevosDetalles->has($idProducto)) {
-                                                    $detalleViejo->delete();
+                                                return null;
+                                            })
+                                            ->hintColor('danger')
+                                            ->columnSpanFull()
+                                            ->reorderable(false)
+                                            ->addable(false)
+                                            ->live()
+                                            ->afterStateUpdated(function (Get $get, Set $set) {
+                                                self::modificarTotal($get, $set);
+                                            })
+                                            ->deleteAction(
+                                                fn (Action $action) => $action->after(fn (Get $get, Set $set) => self::modificarTotal($get, $set))
+                                            )
+                                            ->loadStateFromRelationshipsUsing(function (Repeater $component, ?Venta $record) {
+                                                if ($record) {
+                                                    $productos = $record->ventaDetalle->map(function (VentaDetalle $vd) {
+                                                        return [
+                                                            'id_producto' => $vd->id_producto,
+                                                            'nombre' => $vd->producto->nombre_producto,
+                                                            'precio' => number_format($vd->producto->precio_unidad, 0, '', ','),
+                                                            'cantidad_vendida_producto' => $vd->cantidad_vendida_producto,
+                                                        ];
+                                                    })->toArray();
+
+                                                    $component->state($productos);
                                                 }
-                                            }
-                                        }),
+                                            })
+                                            ->saveRelationshipsUsing(function (Venta $record, array $state) {
+                                                $nuevosDetalles = collect($state)->keyBy('id_producto');
+                                                $viejosDetalles = $record->ventaDetalle->keyBy('id_producto');
+                                                foreach ($nuevosDetalles as $idProducto => $dataDetalleNuevo) {
+                                                    $detalleViejo = $viejosDetalles->get($idProducto);
+                                                    $inventario = Inventario::query()
+                                                        ->join('producto', 'inventario.id_producto', '=', 'producto.id')
+                                                        ->select('producto.nombre_producto', 'inventario.cantidad_disponible')
+                                                        ->where('inventario.id_producto', $dataDetalleNuevo['id_producto'])
+                                                        ->first();
+                                                    if ($detalleViejo) {
+                                                        $stockDisponibleReal = ($inventario?->cantidad_disponible ?? 0) + $detalleViejo['cantidad_vendida_producto'];
+                                                        if ($stockDisponibleReal < (int) $dataDetalleNuevo['cantidad_vendida_producto']) {
+                                                            Notification::make()
+                                                                ->title('Inventario insuficiente')
+                                                                ->body("No hay suficiente stock para el producto {$inventario->nombre_producto}. Disponibles: ".($inventario?->cantidad_disponible ?? 0))
+                                                                ->danger()
+                                                                ->send();
+                                                            throw new Halt;
+                                                        }
+                                                        $detalleViejo->update($dataDetalleNuevo);
+                                                    } else {
+                                                        if ($inventario->cantidad_disponible < (int) $dataDetalleNuevo['cantidad_vendida_producto']) {
+                                                            Notification::make()
+                                                                ->title('Inventario insuficiente')
+                                                                ->body("No hay suficiente stock para el producto {$inventario->nombre_producto}. Disponibles: ".($inventario?->cantidad_disponible ?? 0))
+                                                                ->danger()
+                                                                ->send();
+                                                            throw new Halt;
+                                                        }
+                                                        $record->ventaDetalle()->create($dataDetalleNuevo);
+                                                        self::modificarCantidadProductoInventario($dataDetalleNuevo);
+                                                    }
+                                                }
 
-                                    Placeholder::make('total_label')
-                                        ->label('Total:')
-                                        ->content(function (Get $get) {
-                                            $totalProductosAgregados = $get('productos') ?: [];
-                                            $total = collect($totalProductosAgregados)
-                                                ->reduce(function ($carry, $item) {
-                                                    $precio = str_replace(',', '', $item['precio']);
+                                                foreach ($viejosDetalles as $idProducto => $detalleViejo) {
+                                                    if (! $nuevosDetalles->has($idProducto)) {
+                                                        $detalleViejo->delete();
+                                                    }
+                                                }
+                                            }),
 
-                                                    return $carry + ((float) $precio * (int) ($item['cantidad_vendida_producto'] ?? 1));
-                                                }, 0);
+                                        Placeholder::make('total_label')
+                                            ->label('Total:')
+                                            ->content(function (Get $get) {
+                                                $totalProductosAgregados = $get('productos') ?: [];
+                                                $total = collect($totalProductosAgregados)
+                                                    ->reduce(function ($carry, $item) {
+                                                        $precio = str_replace(',', '', $item['precio']);
 
-                                            return '$'.number_format($total, 0, ',', '.');
-                                        })
-                                        ->extraAttributes(['class' => 'text-lg font-bold']),
+                                                        return $carry + ((float) $precio * (int) ($item['cantidad_vendida_producto'] ?? 1));
+                                                    }, 0);
 
-                                ]),
+                                                return '$'.number_format($total, 0, ',', '.');
+                                            })
+                                            ->extraAttributes(['class' => 'text-lg font-bold']),
 
-                        ]),
+                                    ]),
+
+                            ]),
                         Hidden::make('total_venta')
                             ->default(0),
                     ]),
@@ -349,13 +349,13 @@ class VentaResource extends Resource
                     }),
             ])
             ->actions([
-            Tables\Actions\EditAction::make(),
-        ])
+                Tables\Actions\EditAction::make(),
+            ])
             ->bulkActions([
-            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-            ]),
-        ]);
+                ]),
+            ]);
     }
 
     public static function modificarCantidadProductoInventario(array $data): void
