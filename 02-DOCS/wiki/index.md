@@ -23,3 +23,9 @@
 | Spec | Estado | Qué resuelve |
 |---|---|---|
 | [negocio-compartido](sdd/specs/negocio-compartido.md) | aprobada en autopiloto | Varios usuarios de un negocio comparten inventario, ventas y reportes |
+
+## sdd/plans
+
+| Plan | Estado | Spec |
+|---|---|---|
+| [negocio-compartido](sdd/plans/negocio-compartido.md) | planned (autopiloto) | [negocio-compartido](sdd/specs/negocio-compartido.md) |
