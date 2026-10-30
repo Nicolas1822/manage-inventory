@@ -12,7 +12,8 @@ class DatabaseSeeder extends Seeder
       MunicipiosSeeder::class,
       UnidadDeMedidaSeeder::class,
       TributosSeeder::class,
-      RangoNumeracionSeeder::class
+      RangoNumeracionSeeder::class,
+      SuperAdminSeeder::class,
     ]);
   }
 }
