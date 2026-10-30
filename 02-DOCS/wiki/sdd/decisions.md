@@ -11,3 +11,5 @@
 | 2026-10-30 | plan | `id_usuario` se conserva como autor. | Conservar · eliminar | La spec exige mostrar quién hizo cada venta. |
 | 2026-10-30 | plan | Se registra `database/migrations/alter/` con `loadMigrationsFrom`; `triggers/` no. | Registrar · migraciones en raíz | La constitución (10) manda `alter/`, pero nada la cargaba. Cargar `triggers/` cambiaría el comportamiento del stock. |
 | 2026-10-30 | plan | La rama usa la BD `manage_inventory_negocio`, no `manage_inventory_db`. | BD aparte · BD de dev | Otra sesión trabaja sobre `dev` y su BD; reiniciarla la rompería. |
+| 2026-10-30 | review | Se corrige en esta rama la fuga del PDF de factura electrónica, aunque es previa. | Corregir ahora · dejar aparte | Contradice el objetivo de aislamiento de la spec. |
+| 2026-10-30 | review | Quedan fuera: edición de ventas sin ajuste de stock (triggers no cargados), `FilamentUser`, errores 500 en carreras raras. | Incluir · diferir | Son previos y no los pide la spec; cada uno merece su propio cambio. |

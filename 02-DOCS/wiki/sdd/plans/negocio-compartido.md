@@ -271,3 +271,26 @@ Desviaciones del plan: los subagentes de T4–T6 trabajaron en el mismo worktree
 sin commits propios) en lugar de un worktree cada uno, para no crear ramas adicionales. El worktree
 necesita su propio `vendor/` (copiado) porque un enlace hacia el `vendor` principal cargaba las
 clases `App\` de la carpeta principal.
+
+## 11. Review (2026-10-30)
+
+Dos revisores adversariales con contexto limpio (seguridad y corrección). Sin hallazgos críticos.
+
+Corregidos en la rama (con test que falla sin el arreglo, comprobado por mutación):
+- PDF de factura electrónica (`/factura-electronica/{numero}`) servido sin login a cualquiera → ahora
+  exige usuario autenticado y factura del propio negocio; si no, 404.
+- Selects que aceptaban ids de otro negocio (`id_factura` en producto, `id_cliente`/`id_venta` en
+  factura electrónica, `id_producto` en inventario) → regla `exists` limitada al negocio activo.
+- `nombre`/`codigo` de negocio más largos que la columna → `maxLength(100/50)`.
+- Posible deadlock entre ventas simultáneas → bloqueo en orden de `id_producto` y 3 intentos.
+- `SuperAdminSeeder` pisaba la contraseña en cada `db:seed` → solo crea si no existe.
+- Tests añadidos: stock insuficiente, widgets aislados, factura ajena en producto, PDF por negocio.
+
+Resultado: 42 tests, 171 aserciones, Pint limpio.
+
+Fuera de alcance (ya existían antes de la rama; quedan como trabajo aparte):
+- Editar una venta no devuelve stock ni ajusta `cantidad_vendida`: los triggers de
+  `database/migrations/triggers/` nunca se cargan. `EditVenta` tampoco usa transacción ni bloqueo.
+- `User` no implementa `FilamentUser`: fuera de `APP_ENV=local` el panel da 403 a todos.
+- Error 500 (en vez de aviso) si a un usuario le retiran el negocio con un formulario abierto, o en
+  una carrera al asignar un usuario a dos negocios a la vez.
