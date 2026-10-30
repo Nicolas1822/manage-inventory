@@ -65,6 +65,7 @@ class FacturaElectronicaResource extends Resource
                     ->maxLength(250)
                     ->required(),
                 Select::make('id_cliente')
+                    ->exists('clientes', 'id', static::delNegocioActivo())
                     ->label('Cliente')
                     ->relationship(
                         name: 'cliente',
@@ -143,6 +144,7 @@ class FacturaElectronicaResource extends Resource
                     ])
                     ->required(),
                 Select::make('id_venta')
+                    ->exists('venta', 'id', static::delNegocioActivo())
                     ->label('Venta y Productos')
                     ->options(function () {
                         return Venta::query()

@@ -28,6 +28,7 @@ class InventarioResource extends Resource
                     ->required()
                     ->numeric(),
                 Forms\Components\TextInput::make('id_producto')
+                    ->exists('producto', 'id', static::delNegocioActivo())
                     ->required()
                     ->numeric(),
                 Forms\Components\Hidden::make('id_usuario')

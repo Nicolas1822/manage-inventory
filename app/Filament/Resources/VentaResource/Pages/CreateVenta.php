@@ -22,6 +22,10 @@ class CreateVenta extends CreateRecord
 
     protected function handleRecordCreation(array $data): Venta
     {
+        // Bloquea el inventario en orden de producto para que dos ventas simultáneas
+        // no se esperen en cruz (deadlock); si aun así ocurre, se reintenta.
+        $data['productos'] = collect($data['productos'])->sortBy('id_producto')->values()->all();
+
         return DB::transaction(function () use ($data) {
             foreach ($data['productos'] as $producto) {
                 $inventario = Inventario::query()
@@ -47,7 +51,7 @@ class CreateVenta extends CreateRecord
             }
 
             return $this->crearVenta($data);
-        });
+        }, 3);
     }
 
     protected function crearVenta(array $data)

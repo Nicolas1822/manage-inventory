@@ -86,6 +86,7 @@ class ProductoResource extends Resource
                     ->options(Tributo::query()->pluck('name', 'id'))
                     ->searchable(),
                 Forms\Components\Select::make('id_factura')
+                    ->exists('factura', 'id', static::delNegocioActivo())
                     ->relationship(
                         name: 'factura',
                         titleAttribute: 'codigo_factura'

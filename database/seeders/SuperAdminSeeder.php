@@ -19,9 +19,14 @@ class SuperAdminSeeder extends Seeder
             return;
         }
 
+        // Si ya existe, solo garantiza la marca: no pisa nombre ni contraseña.
         $usuario = User::firstOrNew(['email' => $email]);
-        $usuario->name = $name;
-        $usuario->password = $password;
+
+        if (! $usuario->exists) {
+            $usuario->name = $name;
+            $usuario->password = $password;
+        }
+
         $usuario->forceFill(['es_superadmin' => true])->save();
     }
 }

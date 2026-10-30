@@ -62,11 +62,11 @@ class SesionResource extends Resource
         return $form->schema([
             Forms\Components\TextInput::make('nombre')
                 ->required()
-                ->maxLength(255),
+                ->maxLength(100),
             Forms\Components\TextInput::make('codigo')
                 ->label('Código')
                 ->required()
-                ->maxLength(255)
+                ->maxLength(50)
                 ->unique(ignoreRecord: true),
             Forms\Components\Textarea::make('descripcion')
                 ->label('Descripción')

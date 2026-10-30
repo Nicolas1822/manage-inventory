@@ -7,14 +7,19 @@ use App\Filament\Resources\ClienteResource;
 use App\Filament\Resources\FacturaElectronicaResource;
 use App\Filament\Resources\FacturaResource;
 use App\Filament\Resources\InventarioResource;
+use App\Filament\Resources\InventarioResource\Widgets\ProductosAgotados;
 use App\Filament\Resources\ProductoResource;
+use App\Filament\Resources\ProductoResource\Pages\CreateProducto;
 use App\Filament\Resources\VentaResource;
 use App\Filament\Resources\VentaResource\Pages\CreateVenta;
+use App\Filament\Widgets\MasVendidos;
 use App\Models\Cliente;
 use App\Models\Factura;
+use App\Models\FacturaElectronica;
 use App\Models\Inventario;
 use App\Models\Municipio;
 use App\Models\Producto;
+use App\Models\RangosNumeracion;
 use App\Models\Sesion;
 use App\Models\Tributo;
 use App\Models\User;
@@ -22,7 +27,10 @@ use App\Models\Venta;
 use App\Models\VentaDetalle;
 use App\Services\MembresiaNegocio;
 use App\Services\NegocioActual;
+use Filament\Support\Exceptions\Halt;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
 use ReflectionMethod;
 use Tests\TestCase;
 
@@ -334,5 +342,100 @@ class NegocioCompartidoTest extends TestCase
         $this->get(ProductoResource::getUrl('index'))->assertOk()
             ->assertSee('Alfa-N1-ca17')
             ->assertDontSee('Beta-N2-ca17');
+    }
+
+    public function test_venta_con_stock_insuficiente_no_crea_nada_ni_toca_el_stock(): void
+    {
+        $this->actuarComo($this->a);
+        $producto = $this->crearProducto('Alfa-N1-sin-stock', 10);
+
+        try {
+            $this->vender($producto, 20);
+            $this->fail('La venta debió detenerse por stock insuficiente.');
+        } catch (Halt) {
+        }
+
+        $this->assertSame(0, Venta::count());
+        $this->assertSame(10, $this->stock($producto));
+    }
+
+    public function test_ca3_los_widgets_no_muestran_datos_de_otro_negocio(): void
+    {
+        $this->actuarComo($this->a);
+        $producto = $this->crearProducto('Alfa-N1-widget', 1);
+        $this->vender($producto, 1);
+
+        Livewire::test(MasVendidos::class)->assertSee('Alfa-N1-widget');
+        Livewire::test(ProductosAgotados::class)->assertSee('Alfa-N1-widget');
+
+        $this->actuarComo($this->b);
+        Livewire::test(MasVendidos::class)->assertDontSee('Alfa-N1-widget');
+        Livewire::test(ProductosAgotados::class)->assertDontSee('Alfa-N1-widget');
+    }
+
+    public function test_no_se_puede_elegir_una_factura_de_otro_negocio_al_crear_producto(): void
+    {
+        $this->actuarComo($this->a);
+        $facturaN1 = Factura::create([
+            'codigo_factura' => 7777,
+            'fecha_emision' => '2026-01-01',
+            'total_factura' => 1000,
+            'id_usuario' => $this->a->id,
+        ]);
+
+        $this->actuarComo($this->b);
+        Livewire::test(CreateProducto::class)
+            ->fillForm(['id_factura' => $facturaN1->id])
+            ->call('create')
+            ->assertHasFormErrors(['id_factura' => 'exists']);
+
+        $facturaN2 = Factura::create([
+            'codigo_factura' => 8888,
+            'fecha_emision' => '2026-01-01',
+            'total_factura' => 1000,
+            'id_usuario' => $this->b->id,
+        ]);
+        Livewire::test(CreateProducto::class)
+            ->fillForm(['id_factura' => $facturaN2->id])
+            ->call('create')
+            ->assertHasNoFormErrors(['id_factura']);
+    }
+
+    public function test_pdf_de_factura_electronica_solo_para_su_negocio(): void
+    {
+        Http::fake(['*' => Http::response([
+            'access_token' => 'token-falso',
+            'data' => ['pdf_base_64_encoded' => base64_encode('%PDF-falso'), 'file_name' => 'f'],
+        ])]);
+
+        $this->actuarComo($this->a);
+        $producto = $this->crearProducto('Alfa-N1-pdf', 10);
+        $venta = $this->vender($producto, 1);
+        $rango = RangosNumeracion::create([
+            'document' => 'Factura', 'prefix' => 'SETP', 'current' => 1, 'is_expired' => 0, 'is_active' => 1,
+        ]);
+        FacturaElectronica::create([
+            'id_rango_numeracion' => $rango->id,
+            'documento' => '01',
+            'codigo_referencia' => 'REF-1',
+            'observacion' => 'Prueba',
+            'forma_pago' => '1',
+            'codigo_metodo_pago' => 10,
+            'tipo_operacion' => '10',
+            'numero_factura' => 'SETP-N1-1',
+            'id_cliente' => $this->crearCliente('Cliente-N1-pdf')->id,
+            'id_venta' => $venta->id,
+            'id_usuario' => $this->a->id,
+        ]);
+
+        $this->get(route('factura-electronica.show', 'SETP-N1-1'))->assertOk();
+
+        $this->actuarComo($this->b);
+        $this->get(route('factura-electronica.show', 'SETP-N1-1'))->assertNotFound();
+        $this->get(route('factura-electronica.descargar', 'SETP-N1-1'))->assertNotFound();
+
+        auth()->logout();
+        app(NegocioActual::class)->refrescar();
+        $this->get(route('factura-electronica.show', 'SETP-N1-1'))->assertNotFound();
     }
 }
