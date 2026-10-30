@@ -118,10 +118,9 @@ NegocioScope::apply(Builder, Model)
 
 PerteneceANegocio (trait)
   - bootPerteneceANegocio(): addGlobalScope(NegocioScope); creating:
-      id_sesion ya puesto → respeta
-      hayUsuario && tieneNegocio → id_sesion = id()
+      hayUsuario && tieneNegocio → id_sesion = id() (se fuerza, aunque venga otro valor)
       hayUsuario && !tieneNegocio → throw SinNegocioException
-      !hayUsuario → no toca (la BD rechaza NOT NULL si falta)
+      !hayUsuario → respeta el id_sesion explícito (la BD rechaza NOT NULL si falta)
   - negocio(): BelongsTo(Sesion, 'id_sesion')
 
 MembresiaNegocio::asignar(User, Sesion): void
