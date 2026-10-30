@@ -42,7 +42,7 @@ status: planned (autopiloto)
 
 - Spec §Goals y CA-1…CA-17. Lo que más pesa: CA-3/CA-4 (aislamiento total) y CA-14 (suite verde).
 - Hoy: el filtro `id_usuario = auth()->id()` está repetido en ~30 sitios (Resources, widgets,
-  Dashboard, `ReporteVentasService`, `CreateVenta`, observers). `producto` y `venta` no tienen dueño
+  Dashboard, `ReporteVentasService`, `CreateVenta`; los observers solo escriben el autor). `producto` y `venta` no tienen dueño
   propio. La API n8n no filtra por usuario (`index`) o lo hace de forma opcional (`mas-vendidos`).
 - Las tablas `sesion` y `sesion_usuario` ya existen y no se usan.
 - Constitución 9 (capas), 10 (convenciones de BD y carpeta `alter/`), 7 (tests), 16 (API autenticada).
@@ -226,14 +226,22 @@ Rollback: la rama no toca `dev` hasta el PR. Las migraciones tienen `down()` sim
 | ID | Tarea | Depende | [P] | Traza | Done-check (literal) |
 |---|---|---|---|---|---|
 | T1 | Migraciones `alter/` (es_superadmin, unique id_user, id_sesion en 7 tablas); registrar `alter/` en `AppServiceProvider`; `User` con cast y `negocios()` | — | | §0, §4 | `X php artisan migrate:fresh` sin error y `X php artisan migrate:status` lista las 3 migraciones `2026_10_30_*` como Ran |
-| T2 | `NegocioActual`, `NegocioScope`, `PerteneceANegocio`, `SinNegocioException`; trait en Producto, Inventario, Factura, Venta, VentaDetalle, Cliente, FacturaElectronica; `ProductoObserver` copia `id_sesion` | T1 | | §2, §3 | `grep -l "use PerteneceANegocio" app/Models/*.php \| wc -l` = 7 |
+| T2 | `NegocioActual`, `NegocioScope`, `PerteneceANegocio`, `SinNegocioException`; trait en Producto, Inventario, Factura, Venta, VentaDetalle, Cliente, FacturaElectronica; `ProductoObserver` copia `id_sesion` | T1 | | §2, §3 | 7 modelos con el trait **y** `X php artisan test --filter=NegocioScopeTest` verde (N1 no ve N2; sin negocio ve vacío; crear sin negocio lanza) |
 | T3 | Adaptar `setUp` de `ReporteVentasServiceTest` y `MasVendidosApiTest` (usuario con negocio) | T2 | | CA-14 | `X php artisan test --filter=MasVendidosApiTest` verde |
-| T4 | Quitar filtros `id_usuario` de propiedad en Resources, widgets y `CreateVenta`; `CreateVenta` con transacción + `lockForUpdate`; trait `RequiereNegocio` en Resources operativos; aviso «sin negocio» | T2 | P | CA-1…4, 9…11, 15 | `grep -rnE "id_usuario'?, *(=, *)?auth\(\)->id\(\)\)" app \| grep -v "=>"` vacío |
-| T5 | `ReporteVentasService` con `sesionId`; `Dashboard` pasa el negocio activo y avisa si no hay; ajustar llamadas en `ReporteVentasServiceTest` | T3 | P | CA-5 | `X php artisan test --filter=ReporteVentasServiceTest` verde |
-| T6 | `MembresiaNegocio` + excepción; `SesionResource` «Negocios» + `MiembrosRelationManager`; `UserResource` «Usuarios»; `SuperAdminSeeder` + claves en `.env.example` | T1 | P | CA-6…8, 16 | `X php artisan route:list --path=inventory` muestra rutas `sesions` y `users` |
-| T7 | `tests/Feature/NegocioCompartidoTest.php` con un test por CA de §5 | T4, T5, T6 | | CA-1…17 | `X php artisan test --filter=NegocioCompartidoTest` verde |
+| T4 | Quitar filtros `id_usuario` de propiedad en Resources, widgets y `CreateVenta` (incl. `VentaResource:328`, `ProductoResource:90`, `FacturaElectronicaResource:82` y `:207`); `CreateVenta` con transacción + `lockForUpdate`; columna «Vendedor» en `VentaResource` desde `ventaDetalle.users`; trait `RequiereNegocio` en Resources operativos; aviso «sin negocio» | T2 | P | CA-1…4, 9…12, 15 | `grep -rnE "id_usuario'?, *('=', *)?auth\(\)->id\(\)" app \| grep -v "' *=> *auth"` vacío |
+| T5 | `ReporteVentasService` con `sesionId`; `Dashboard` pasa el negocio activo y avisa si no hay; ajustar llamadas en `ReporteVentasServiceTest` | T3 | P | CA-5 | `X php artisan test --filter=ReporteVentasServiceTest` verde **y** `grep -rn "userId" app` vacío |
+| T6 | `MembresiaNegocio` + excepción; `SesionResource` «Negocios» + `MiembrosRelationManager`; `UserResource` «Usuarios»; `SuperAdminSeeder` (usa `forceFill` para `es_superadmin`) + claves en `.env.example` | T1 | P | CA-6…8, 16 | rutas `sesions` y `users` en `X php artisan route:list --path=inventory` **y** `X php artisan test --filter=MembresiaNegocioTest` verde |
+| T7 | `tests/Feature/NegocioCompartidoTest.php` con un test por CA de §5, incluidas las aserciones positivas por HTTP (C ve en los listados lo creado por A, y el autor de la venta) | T4, T5, T6 | | CA-1…17 | `X php artisan test --filter=NegocioCompartidoTest` verde |
 | T8 | BD fresca con semilla + gates de verify | T7 | | DoD | `X php artisan migrate:fresh --seed` OK; `X php artisan test` verde; `X ./vendor/bin/pint --test --dirty` limpio; `grep -rn "DB::table\|DB::select" app` vacío |
+
+Nota: entre T3 y T5, `ReporteVentasServiceTest` puede estar en rojo (cambia la firma). Se acepta; T5 lo cierra.
 
 Reparto multiagente: T1–T3 los hace la sesión principal. T4, T5 y T6 van a tres subagentes
 `developer`, cada uno en su worktree desde `feat_negocio_compartido`. La sesión principal integra,
 escribe T7 y corre T8.
+
+## 9. Analyze (2026-10-30)
+
+PASS WITH ISSUES. Corregido aquí: done-check de T4 (dejaba pasar 4 filtros), `grep userId` en T5,
+tests mínimos en T2 y T6, aserciones positivas por HTTP para CA-1/2/15, columna de autor en el listado
+de ventas (CA-2/12), `forceFill` en el seeder.
