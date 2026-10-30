@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Services\NegocioActual;
 use App\Services\ReporteVentasService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
@@ -52,7 +53,7 @@ class Dashboard extends BaseDashboard
 
                 Select::make('periodo')
                     ->label('Mes y Año')
-                    ->options(ReporteVentasService::getPeriodOptions())
+                    ->options(ReporteVentasService::getPeriodOptions(app(NegocioActual::class)->id()))
                     ->default(now()->format('Y-m'))
                     ->searchable()
                     ->required()
@@ -60,7 +61,7 @@ class Dashboard extends BaseDashboard
 
                 Select::make('anio')
                     ->label('Año')
-                    ->options(fn (): array => ReporteVentasService::getYearOptions())
+                    ->options(fn (): array => ReporteVentasService::getYearOptions(app(NegocioActual::class)->id()))
                     ->default(now()->year)
                     ->searchable()
                     ->required()
@@ -108,19 +109,30 @@ class Dashboard extends BaseDashboard
                     )),
             ])
             ->action(function (array $data, ReporteVentasService $service): ?BinaryFileResponse {
+                $sesionId = app(NegocioActual::class)->id();
+
+                if ($sesionId === null) {
+                    Notification::make()
+                        ->warning()
+                        ->title('No perteneces a ningún negocio.')
+                        ->send();
+
+                    return null;
+                }
+
                 $tipo = $data['tipo_reporte'] ?? 'mensual';
 
                 if ($tipo === 'mensual') {
                     $result = $service->generateReport(
                         period: $data['periodo'],
-                        userId: (int) auth()->id()
+                        sesionId: $sesionId
                     );
                 } else {
                     $result = $service->generateMultiPeriodReport(
                         tipo: $tipo,
                         anio: (int) $data['anio'],
                         mesInicio: (int) ($data['mes_inicio'] ?? 1),
-                        userId: (int) auth()->id()
+                        sesionId: $sesionId
                     );
                 }
 

@@ -2,23 +2,26 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\PerteneceANegocio;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Factura extends Model
 {
-  protected $table = 'factura';
+    protected $table = 'factura';
 
-  use HasFactory;
+    use HasFactory;
+    use PerteneceANegocio;
 
-  protected $fillable = ['codigo_factura', 'fecha_emision', 'total_factura', 'id_usuario'];
+    protected $fillable = ['id_sesion', 'codigo_factura', 'fecha_emision', 'total_factura', 'id_usuario'];
 
-  public function producto()
-  {
-    return $this->hasMany(Producto::class, 'id_factura');
-  }
+    public function producto()
+    {
+        return $this->hasMany(Producto::class, 'id_factura');
+    }
 
-  public function users()  {
-    return $this->belongsTo(User::class, 'id_usuario');
-  }
+    public function users()
+    {
+        return $this->belongsTo(User::class, 'id_usuario');
+    }
 }

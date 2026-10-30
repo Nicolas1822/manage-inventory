@@ -8,17 +8,17 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditCliente extends EditRecord
 {
-  protected static string $resource = ClienteResource::class;
+    protected static string $resource = ClienteResource::class;
 
-  protected function getHeaderActions(): array
-  {
-    return [
-      Actions\DeleteAction::make(),
-    ];
-  }
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\DeleteAction::make(),
+        ];
+    }
 
-  protected function getRedirectUrl(): string
-  {
-    return static::getResource()::getUrl('index');
-  }
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }
