@@ -6,12 +6,12 @@ tags: [sdd, spec, multi-negocio, aislamiento]
 timestamp: 2026-10-30T12:00:00Z
 topic: sdd
 slug: negocio-compartido
-status: aprobada en autopiloto (no punto por punto)
+status: clarified — aprobada en autopiloto (no punto por punto)
 ---
 
 # Spec — Inventario compartido por negocio
 
-> Slug: `negocio-compartido` · Status: aprobada en autopiloto · Created: 2026-10-30
+> Slug: `negocio-compartido` · Status: clarified (autopiloto) · Created: 2026-10-30
 > Inherits: [constitution](../constitution.md)
 > Rama: `feat_negocio_compartido` (worktree `.worktrees/feat_negocio_compartido`)
 
@@ -66,6 +66,8 @@ desaconseja.
   siendo comunes a todo el sistema (ver *decisión diferida*).
 - **Cambiar la API de n8n.** Sigue respondiendo como hoy (ver *suposición tomada*).
 - **Una clave de API de n8n por negocio.**
+- **Borrar usuarios.** Para quitar el acceso, se retira al usuario de su negocio.
+- **Nombrar superadministradores desde el panel.** Solo por semilla o comando.
 - **Actualización en tiempo real** de pantallas abiertas. Los cambios se ven en la siguiente carga.
 
 ## Users & context
@@ -135,6 +137,12 @@ desaconseja.
   datos de N1, y C sigue viendo las ventas de A con el nombre de A.
 - **CA-13** Given P en N1 y un producto con el mismo nombre en N2, When un miembro de N1 cambia el
   precio o el stock de su P, Then el producto de N2 no cambia.
+- **CA-15** Given A creó una venta y un cliente en N1, When C (miembro de N1) los edita o los borra,
+  Then el cambio se aplica igual que si lo hiciera A.
+- **CA-16** Given el superadministrador, When crea o edita un usuario en «Negocios», Then el
+  formulario no ofrece ninguna forma de marcar a ese usuario como superadministrador.
+- **CA-17** Given el superadministrador asignado como miembro de N1, When abre inventario, Then ve
+  los datos de N1 y de ningún otro negocio.
 - **CA-14** Given la suite de tests existente (14 tests en la línea base), When se aplica el cambio,
   Then la suite pasa en verde, sin tests borrados ni saltados (constitución, principio 6).
 
@@ -164,6 +172,30 @@ desaconseja.
 - **área no formulable** — Qué significa «borrar un negocio» con datos y facturas electrónicas
   emitidas. Por ahora solo existe desactivar.
 
+## Clarifications
+
+Pasada de `clarify`, 2026-10-30, en autopiloto. Leídos: spec, constitución, perfil y código.
+
+- ¿Un miembro edita o borra registros de un compañero? → **Sí** (CA-15). → Se deduce de «mismos
+  datos» y «mismos permisos»; se hace explícito.
+- ¿El superadministrador puede crear otro superadministrador desde el panel? → **No** (CA-16, Out of
+  scope). → Evita escalar permisos desde una pantalla.
+- ¿Se borran usuarios? → **No en este ciclo**. → Sus ventas los referencian; retirar del negocio basta.
+- ¿El superadministrador miembro de un negocio ve sus datos? → **Sí, solo los de ese negocio**
+  (CA-17). → Ya estaba en *Users & context*; ahora es comprobable.
+
+Estado de cada punto del traspaso tipado:
+- suposición «API de n8n no cambia» → **validada, se mantiene** (comprobado: `index` no filtra por
+  usuario; `mas-vendidos` acepta un `id_usuario` opcional, que se conserva).
+- suposición «marca de superadministrador en el usuario» → **validada, se mantiene**.
+- suposición «usuario sin negocio entra y ve un aviso» → **validada, se mantiene**.
+- suposición «catálogos comunes globales» → **validada, se mantiene**; incluye rangos de numeración,
+  coherente con la decisión diferida.
+- suposición «primer superadministrador al reiniciar la base» → **validada, se mantiene**.
+- decisión diferida «numeración DIAN por negocio» → **se deja diferida**.
+- decisión diferida «roles dentro del negocio» → **se deja diferida**.
+- área no formulable «borrar un negocio» → **anotada, sigue sin formularse**.
+
 ## Revisions
 
 - 2026-10-30 — Primera versión, escrita tras la ronda de preguntas con el dueño: un negocio por
@@ -173,3 +205,5 @@ desaconseja.
   negocio no crea registros (CA-10); desactivar negocio y retirar miembro entran en Goals y CA-6; se
   quita el filtro de n8n por YAGNI (la API no cambia); «al instante» pasa a «en la siguiente carga»;
   la regla de identificación de cliente no cambia (comprobado: hoy no se exige unicidad).
+- 2026-10-30 — `clarify`: CA-15, CA-16 y CA-17 añadidos; borrar usuarios y nombrar superadmin desde
+  el panel pasan a Out of scope. Estado → clarified.
