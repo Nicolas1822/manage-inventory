@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Factura;
 use App\Models\Producto;
+use App\Models\Sesion;
 use App\Models\User;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
@@ -17,6 +18,8 @@ class ReporteVentasServiceTest extends TestCase
 
     protected User $user;
 
+    protected Sesion $negocio;
+
     protected Factura $factura;
 
     protected ReporteVentasService $service;
@@ -26,6 +29,8 @@ class ReporteVentasServiceTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create();
+        $this->negocio = Sesion::create(['nombre' => 'Negocio de prueba', 'codigo' => uniqid('test-'), 'estado' => true]);
+        $this->negocio->usuarios()->attach($this->user->id);
         $this->actingAs($this->user);
 
         $this->factura = Factura::create([
