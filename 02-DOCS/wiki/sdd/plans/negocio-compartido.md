@@ -244,3 +244,30 @@ escribe T7 y corre T8.
 PASS WITH ISSUES. Corregido aquí: done-check de T4 (dejaba pasar 4 filtros), `grep userId` en T5,
 tests mínimos en T2 y T6, aserciones positivas por HTTP para CA-1/2/15, columna de autor en el listado
 de ventas (CA-2/12), `forceFill` en el seeder.
+
+## 10. Verify (2026-10-30)
+
+Veredicto: **PASS**. BD de la rama: `manage_inventory_negocio`.
+
+| Gate | Resultado |
+|---|---|
+| `migrate:fresh --seed` | OK (3 migraciones `alter/` aplicadas; `SuperAdminSeeder` se omite sin variables `SUPERADMIN_*`) |
+| `php artisan test` | 38 passed, 153 assertions (línea base: 14 passed) |
+| `pint --test` sobre los 64 PHP de la rama | PASS |
+| `grep DB::table\|DB::select app` | vacío |
+| `grep` filtros `id_usuario` de propiedad | vacío |
+| `grep userId app` | vacío |
+| Mutación: scope desactivado | 7 de 12 tests de aceptación fallan (los de aislamiento) |
+| Mutación: filtro por autor en listado de ventas | CA-2 y CA-12 fallan |
+
+Trazas CA → test: CA-1/2/3/4/9/10/11/12/13/15/17 en `NegocioCompartidoTest`; CA-5 en
+`ReporteVentasServiceTest`; CA-6/7/8/16 en `MembresiaNegocioTest`; CA-14 = suite completa.
+
+Hallazgo fuera de alcance: `User` no implementa `FilamentUser`. Filament 3 solo deja entrar al panel con
+`APP_ENV=local`; con otro entorno da 403 a todos. Ya pasaba antes de esta rama. Los tests HTTP fijan
+`app.env=local`.
+
+Desviaciones del plan: los subagentes de T4–T6 trabajaron en el mismo worktree (archivos disjuntos,
+sin commits propios) en lugar de un worktree cada uno, para no crear ramas adicionales. El worktree
+necesita su propio `vendor/` (copiado) porque un enlace hacia el `vendor` principal cargaba las
+clases `App\` de la carpeta principal.
