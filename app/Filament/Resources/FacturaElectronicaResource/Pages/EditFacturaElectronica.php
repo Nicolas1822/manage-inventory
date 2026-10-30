@@ -8,12 +8,12 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditFacturaElectronica extends EditRecord
 {
-  protected static string $resource = FacturaElectronicaResource::class;
+    protected static string $resource = FacturaElectronicaResource::class;
 
-  protected function getHeaderActions(): array
-  {
-    return [
-      Actions\DeleteAction::make(),
-    ];
-  }
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\DeleteAction::make(),
+        ];
+    }
 }
