@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FacturaElectronica;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -84,6 +85,8 @@ class FacturaElectronicaController extends Controller
 
     public function downloadFactura($numeroFactura)
     {
+        $this->autorizarFactura($numeroFactura);
+
         $pdfData = $this->getPdfFactura($numeroFactura);
         if (! $pdfData) {
             abort(404, 'No se pudo obtener la factura para descargar');
@@ -100,6 +103,8 @@ class FacturaElectronicaController extends Controller
 
     public function showFactura(string $numeroFactura)
     {
+        $this->autorizarFactura($numeroFactura);
+
         $pdfData = $this->getPdfFactura($numeroFactura);
         if (! $pdfData) {
             abort(404, 'No se pudo obtener la factura para visualizar');
@@ -108,5 +113,17 @@ class FacturaElectronicaController extends Controller
         return response($pdfData['content'], 200)
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'inline; filename="'.$pdfData['filename'].'.pdf"');
+    }
+
+    /**
+     * Solo un usuario autenticado y miembro del negocio dueño de la factura puede verla.
+     * Responde 404 para no confirmar que la factura existe.
+     */
+    private function autorizarFactura(string $numeroFactura): void
+    {
+        abort_unless(
+            auth()->check() && FacturaElectronica::where('numero_factura', $numeroFactura)->exists(),
+            404
+        );
     }
 }

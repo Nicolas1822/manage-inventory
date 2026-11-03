@@ -39,14 +39,16 @@ class ReporteVentasService
     /**
      * Obtiene las opciones de periodo mensual en formato ['Y-m' => 'Mes Año']
      */
-    public static function getPeriodOptions(): array
+    public static function getPeriodOptions(?int $sesionId = null): array
     {
         $options = [];
         $now = now();
         $startYear = max(2023, $now->year - 3);
         $endYear = $now->year;
 
-        $minVentaDate = Venta::query()->min('fecha_venta');
+        $minVentaDate = Venta::query()
+            ->when($sesionId !== null, fn ($q) => $q->where('venta.id_sesion', $sesionId))
+            ->min('fecha_venta');
         if ($minVentaDate) {
             $minYear = (int) substr($minVentaDate, 0, 4);
             if ($minYear < $startYear) {
@@ -58,7 +60,7 @@ class ReporteVentasService
             $maxMonth = ($year === $now->year) ? $now->month : 12;
             for ($month = $maxMonth; $month >= 1; $month--) {
                 $key = sprintf('%04d-%02d', $year, $month);
-                $options[$key] = self::MESES[$month] . ' ' . $year;
+                $options[$key] = self::MESES[$month].' '.$year;
             }
         }
 
@@ -66,13 +68,14 @@ class ReporteVentasService
     }
 
     /**
-     * Obtiene los productos disponibles para el usuario autenticado
+     * Obtiene los productos disponibles en el negocio indicado
      */
-    public static function getProductsOptions(int $userId): array
+    public static function getProductsOptions(int $sesionId): array
     {
         return Producto::query()
             ->join('inventario', 'producto.id', '=', 'inventario.id_producto')
-            ->where('inventario.id_usuario', $userId)
+            ->where('producto.id_sesion', $sesionId)
+            ->where('inventario.id_sesion', $sesionId)
             ->orderBy('producto.nombre_producto')
             ->pluck('producto.nombre_producto', 'producto.id')
             ->toArray();
@@ -82,11 +85,11 @@ class ReporteVentasService
      * Genera el reporte de ventas por producto en el periodo indicado
      *
      * @param  string  $period  Formato 'Y-m' (ej: '2026-09')
-     * @param  int  $userId  ID del usuario autenticado
+     * @param  int  $sesionId  ID del negocio (sesion) cuyas ventas se reportan
      * @param  array<int>|null  $productIds  Lista opcional de IDs de productos seleccionados
      * @return array Resumen con estado, nombres, productos sin ventas y ruta del archivo si aplica
      */
-    public function generateReport(string $period, int $userId, ?array $productIds = null): array
+    public function generateReport(string $period, int $sesionId, ?array $productIds = null): array
     {
         $carbon = Carbon::createFromFormat('Y-m', $period);
         $startDate = $carbon->copy()->startOfMonth()->toDateString();
@@ -98,21 +101,21 @@ class ReporteVentasService
         $anio = (int) $carbon->format('Y');
 
         $query = VentaDetalle::query()
-            ->where('id_usuario', $userId)
+            ->where('venta_detalle.id_sesion', $sesionId)
             ->whereHas('venta', function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('fecha_venta', [$startDate, $endDate]);
             })
             ->with(['venta', 'producto']);
 
-        if (!empty($productIds)) {
+        if (! empty($productIds)) {
             $query->whereIn('id_producto', $productIds);
         }
 
         $ventasDetalle = $query->get();
 
         if ($ventasDetalle->isEmpty()) {
-            $productosSinVentas = !empty($productIds)
-                ? array_values(Producto::query()->whereIn('id', $productIds)->pluck('nombre_producto')->toArray())
+            $productosSinVentas = ! empty($productIds)
+                ? array_values(Producto::query()->where('id_sesion', $sesionId)->whereIn('id', $productIds)->pluck('nombre_producto')->toArray())
                 : [];
 
             return [
@@ -129,19 +132,21 @@ class ReporteVentasService
 
         $productIdsWithSales = $ventasDetalle->pluck('id_producto')->unique()->toArray();
         $productosConVentas = Producto::query()
+            ->where('id_sesion', $sesionId)
             ->whereIn('id', $productIdsWithSales)
             ->pluck('nombre_producto', 'id')
             ->toArray();
 
         $productosSinVentas = [];
-        if (!empty($productIds)) {
+        if (! empty($productIds)) {
             $selectedProducts = Producto::query()
+                ->where('id_sesion', $sesionId)
                 ->whereIn('id', $productIds)
                 ->pluck('nombre_producto', 'id')
                 ->toArray();
 
             foreach ($selectedProducts as $id => $nombre) {
-                if (!in_array($id, $productIdsWithSales)) {
+                if (! in_array($id, $productIdsWithSales)) {
                     $productosSinVentas[] = $nombre;
                 }
             }
@@ -170,11 +175,11 @@ class ReporteVentasService
     protected function createExcelFile(Collection $ventasDetalle, string $fileName): string
     {
         $tempDir = storage_path('app/temp');
-        if (!is_dir($tempDir)) {
+        if (! is_dir($tempDir)) {
             mkdir($tempDir, 0755, true);
         }
 
-        $tempFilePath = $tempDir . DIRECTORY_SEPARATOR . uniqid('reporte_ventas_', true) . '.xlsx';
+        $tempFilePath = $tempDir.DIRECTORY_SEPARATOR.uniqid('reporte_ventas_', true).'.xlsx';
 
         $options = new Options;
         $options->setColumnWidth(18, 1); // Código de Venta
@@ -298,12 +303,14 @@ class ReporteVentasService
     /**
      * Obtiene los años disponibles para reportes multi-periodo
      */
-    public static function getYearOptions(): array
+    public static function getYearOptions(?int $sesionId = null): array
     {
         $now = now();
         $startYear = max(2023, $now->year - 3);
 
-        $minVentaDate = Venta::query()->min('fecha_venta');
+        $minVentaDate = Venta::query()
+            ->when($sesionId !== null, fn ($q) => $q->where('venta.id_sesion', $sesionId))
+            ->min('fecha_venta');
         if ($minVentaDate) {
             $minYear = (int) substr($minVentaDate, 0, 4);
             if ($minYear < $startYear) {
@@ -328,7 +335,7 @@ class ReporteVentasService
      */
     public static function getMonthStartOptions(string $tipo, int $anio): array
     {
-        if (!$tipo || !$anio) {
+        if (! $tipo || ! $anio) {
             return [];
         }
 
@@ -354,7 +361,7 @@ class ReporteVentasService
         $options = [];
         for ($m = 1; $m <= $maxInicio; $m++) {
             $mesFin = $m + $mesesRequeridos - 1;
-            $options[$m] = self::MESES[$m] . ' — ' . self::MESES[$mesFin];
+            $options[$m] = self::MESES[$m].' — '.self::MESES[$mesFin];
         }
 
         return $options;
@@ -365,7 +372,7 @@ class ReporteVentasService
      */
     public static function getRangeLabel(string $tipo, int $anio, int $mesInicio): string
     {
-        if (!$tipo || !$anio) {
+        if (! $tipo || ! $anio) {
             return '';
         }
 
@@ -373,14 +380,14 @@ class ReporteVentasService
             return "Rango: Enero — Diciembre {$anio}";
         }
 
-        if (!$mesInicio) {
+        if (! $mesInicio) {
             return '';
         }
 
         $mesesRequeridos = $tipo === 'trimestral' ? 3 : 6;
         $mesFin = $mesInicio + $mesesRequeridos - 1;
 
-        return 'Rango: ' . self::MESES[$mesInicio] . ' — ' . self::MESES[$mesFin] . " {$anio}";
+        return 'Rango: '.self::MESES[$mesInicio].' — '.self::MESES[$mesFin]." {$anio}";
     }
 
     /**
@@ -388,7 +395,7 @@ class ReporteVentasService
      */
     public static function isParcialPeriod(string $tipo, int $anio, int $mesInicio): bool
     {
-        if (!$tipo || !$anio) {
+        if (! $tipo || ! $anio) {
             return false;
         }
 
@@ -406,7 +413,7 @@ class ReporteVentasService
             return $now->month < 12;
         }
 
-        if (!$mesInicio) {
+        if (! $mesInicio) {
             return false;
         }
 
@@ -422,7 +429,7 @@ class ReporteVentasService
      * @param  string  $tipo  'trimestral', 'semestral' o 'anual'
      * @param  int  $anio  Año del reporte
      * @param  int  $mesInicio  Mes de inicio (1-12). Para anual se ignora y usa 1.
-     * @param  int  $userId  ID del usuario autenticado
+     * @param  int  $sesionId  ID del negocio (sesion) cuyas ventas se reportan
      * @param  array<int>|null  $productIds  IDs opcionales de productos seleccionados
      * @return array Resumen con estado, periodo_label, productos y ruta del archivo
      */
@@ -430,7 +437,7 @@ class ReporteVentasService
         string $tipo,
         int $anio,
         int $mesInicio,
-        int $userId,
+        int $sesionId,
         ?array $productIds = null,
     ): array {
         $mesesRequeridos = match ($tipo) {
@@ -464,25 +471,25 @@ class ReporteVentasService
         }
 
         if ($isParcial) {
-            $periodoLabel .= ' (parcial hasta ' . self::MESES[$mesHasta] . ')';
+            $periodoLabel .= ' (parcial hasta '.self::MESES[$mesHasta].')';
         }
 
         $query = VentaDetalle::query()
-            ->where('id_usuario', $userId)
+            ->where('venta_detalle.id_sesion', $sesionId)
             ->whereHas('venta', function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('fecha_venta', [$startDate, $endDate]);
             })
             ->with(['venta', 'producto']);
 
-        if (!empty($productIds)) {
+        if (! empty($productIds)) {
             $query->whereIn('id_producto', $productIds);
         }
 
         $ventasDetalle = $query->get();
 
         if ($ventasDetalle->isEmpty()) {
-            $productosSinVentas = !empty($productIds)
-                ? array_values(Producto::query()->whereIn('id', $productIds)->pluck('nombre_producto')->toArray())
+            $productosSinVentas = ! empty($productIds)
+                ? array_values(Producto::query()->where('id_sesion', $sesionId)->whereIn('id', $productIds)->pluck('nombre_producto')->toArray())
                 : [];
 
             return [
@@ -497,19 +504,21 @@ class ReporteVentasService
 
         $productIdsWithSales = $ventasDetalle->pluck('id_producto')->unique()->toArray();
         $productosConVentas = Producto::query()
+            ->where('id_sesion', $sesionId)
             ->whereIn('id', $productIdsWithSales)
             ->pluck('nombre_producto', 'id')
             ->toArray();
 
         $productosSinVentas = [];
-        if (!empty($productIds)) {
+        if (! empty($productIds)) {
             $selectedProducts = Producto::query()
+                ->where('id_sesion', $sesionId)
                 ->whereIn('id', $productIds)
                 ->pluck('nombre_producto', 'id')
                 ->toArray();
 
             foreach ($selectedProducts as $id => $nombre) {
-                if (!in_array($id, $productIdsWithSales)) {
+                if (! in_array($id, $productIdsWithSales)) {
                     $productosSinVentas[] = $nombre;
                 }
             }
@@ -563,11 +572,11 @@ class ReporteVentasService
         int $mesHasta,
     ): string {
         $tempDir = storage_path('app/temp');
-        if (!is_dir($tempDir)) {
+        if (! is_dir($tempDir)) {
             mkdir($tempDir, 0755, true);
         }
 
-        $tempFilePath = $tempDir . DIRECTORY_SEPARATOR . uniqid('reporte_ventas_multi_', true) . '.xlsx';
+        $tempFilePath = $tempDir.DIRECTORY_SEPARATOR.uniqid('reporte_ventas_multi_', true).'.xlsx';
 
         $options = new Options;
         $writer = new Writer($options);
@@ -632,7 +641,7 @@ class ReporteVentasService
             $precioUnitario = (float) ($detalle->producto?->precio_unidad ?? 0);
             $subtotal = $cantidad * $precioUnitario;
 
-            if (!isset($resumen[$productoId])) {
+            if (! isset($resumen[$productoId])) {
                 $resumen[$productoId] = [
                     'nombre' => $productoNombre,
                     'meses' => array_fill(1, 12, 0.0),
@@ -644,7 +653,7 @@ class ReporteVentasService
             $resumen[$productoId]['total'] += $subtotal;
         }
 
-        uasort($resumen, fn(array $a, array $b): int => strcmp($a['nombre'], $b['nombre']));
+        uasort($resumen, fn (array $a, array $b): int => strcmp($a['nombre'], $b['nombre']));
 
         $totalesPorMes = array_fill(1, 12, 0.0);
         $granTotal = 0.0;

@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Factura;
 use App\Models\Producto;
+use App\Models\Sesion;
 use App\Models\User;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
+use App\Services\NegocioActual;
 use App\Services\ReporteVentasService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -17,6 +19,8 @@ class ReporteVentasServiceTest extends TestCase
 
     protected User $user;
 
+    protected Sesion $negocio;
+
     protected Factura $factura;
 
     protected ReporteVentasService $service;
@@ -26,6 +30,8 @@ class ReporteVentasServiceTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create();
+        $this->negocio = Sesion::create(['nombre' => 'Negocio de prueba', 'codigo' => uniqid('test-'), 'estado' => true]);
+        $this->negocio->usuarios()->attach($this->user->id);
         $this->actingAs($this->user);
 
         $this->factura = Factura::create([
@@ -87,7 +93,7 @@ class ReporteVentasServiceTest extends TestCase
 
         $result = $this->service->generateReport(
             period: '2026-05',
-            userId: $this->user->id
+            sesionId: $this->negocio->id
         );
 
         $this->assertEquals(ReporteVentasService::STATUS_ALL_SALES, $result['status']);
@@ -106,7 +112,7 @@ class ReporteVentasServiceTest extends TestCase
     {
         $result = $this->service->generateReport(
             period: '2026-01',
-            userId: $this->user->id
+            sesionId: $this->negocio->id
         );
 
         $this->assertEquals(ReporteVentasService::STATUS_NO_SALES, $result['status']);
@@ -124,7 +130,7 @@ class ReporteVentasServiceTest extends TestCase
 
         $result = $this->service->generateReport(
             period: '2026-05',
-            userId: $this->user->id,
+            sesionId: $this->negocio->id,
             productIds: [$productoA->id]
         );
 
@@ -148,7 +154,7 @@ class ReporteVentasServiceTest extends TestCase
             tipo: 'trimestral',
             anio: 2026,
             mesInicio: 4,
-            userId: $this->user->id
+            sesionId: $this->negocio->id
         );
 
         $this->assertEquals(ReporteVentasService::STATUS_ALL_SALES, $result['status']);
@@ -169,7 +175,7 @@ class ReporteVentasServiceTest extends TestCase
             tipo: 'semestral',
             anio: 2026,
             mesInicio: 1,
-            userId: $this->user->id
+            sesionId: $this->negocio->id
         );
 
         $this->assertEquals(ReporteVentasService::STATUS_ALL_SALES, $result['status']);
@@ -189,13 +195,55 @@ class ReporteVentasServiceTest extends TestCase
             tipo: 'anual',
             anio: 2026,
             mesInicio: 1,
-            userId: $this->user->id
+            sesionId: $this->negocio->id
         );
 
         $this->assertEquals(ReporteVentasService::STATUS_ALL_SALES, $result['status']);
         $this->assertArrayHasKey($productoA->id, $result['productos_con_ventas']);
         $this->assertNotNull($result['file_path']);
         $this->assertFileExists($result['file_path']);
+
+        @unlink($result['file_path']);
+    }
+
+    public function test_reporte_incluye_ventas_de_todo_el_negocio_y_excluye_otros_negocios(): void
+    {
+        $negocio = app(NegocioActual::class);
+
+        // A (setUp) vende en su negocio
+        $productoA = $this->createProducto('Producto de A');
+        $this->createVentaConDetalle($productoA, '2026-03-10');
+
+        // C, del mismo negocio, vende otro producto
+        $usuarioC = User::factory()->create();
+        $this->negocio->usuarios()->attach($usuarioC->id);
+        $this->actingAs($usuarioC);
+        $negocio->refrescar();
+        $productoC = $this->createProducto('Producto de C');
+        $this->createVentaConDetalle($productoC, '2026-03-11');
+
+        // B, de otro negocio, también vende
+        $otroNegocio = Sesion::create(['nombre' => 'Otro negocio', 'codigo' => uniqid('otro-'), 'estado' => true]);
+        $usuarioB = User::factory()->create();
+        $otroNegocio->usuarios()->attach($usuarioB->id);
+        $this->actingAs($usuarioB);
+        $negocio->refrescar();
+        $productoB = $this->createProducto('Producto de B');
+        $this->createVentaConDetalle($productoB, '2026-03-12');
+
+        // El reporte se pide con el negocio de A
+        $this->actingAs($this->user);
+        $negocio->refrescar();
+
+        $result = $this->service->generateReport(
+            period: '2026-03',
+            sesionId: $this->negocio->id
+        );
+
+        $this->assertEquals(ReporteVentasService::STATUS_ALL_SALES, $result['status']);
+        $this->assertArrayHasKey($productoA->id, $result['productos_con_ventas']);
+        $this->assertArrayHasKey($productoC->id, $result['productos_con_ventas']);
+        $this->assertArrayNotHasKey($productoB->id, $result['productos_con_ventas']);
 
         @unlink($result['file_path']);
     }

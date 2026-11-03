@@ -4,66 +4,78 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-  use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
-  /**
-   * The attributes that are mass assignable.
-   *
-   * @var array<int, string>
-   */
-  protected $fillable = [
-    'name',
-    'email',
-    'password',
-  ];
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+    ];
 
-  /**
-   * The attributes that should be hidden for serialization.
-   *
-   * @var array<int, string>
-   */
-  protected $hidden = [
-    'password',
-    'remember_token',
-  ];
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
-  /**
-   * The attributes that should be cast.
-   *
-   * @var array<string, string>
-   */
-  protected $casts = [
-    'email_verified_at' => 'datetime',
-    'password' => 'hashed',
-  ];
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'es_superadmin' => 'boolean',
+    ];
 
-  public function inventario()
-  {
-    return $this->hasOne(Inventario::class, 'id_usuario');
-  }
+    /**
+     * Negocios del usuario. En este ciclo, como máximo uno (índice único en id_user).
+     */
+    public function negocios(): BelongsToMany
+    {
+        return $this->belongsToMany(Sesion::class, 'sesion_usuario', 'id_user', 'id_sesion')
+            ->withTimestamps();
+    }
 
-  public function factura()
-  {
-    return $this->hasMany(Factura::class, 'id_usuario');
-  }
+    public function inventario()
+    {
+        return $this->hasOne(Inventario::class, 'id_usuario');
+    }
 
-  public function ventaDetalle()
-  {
-    return $this->hasMany(VentaDetalle::class, 'id_venta');
-  }
+    public function factura()
+    {
+        return $this->hasMany(Factura::class, 'id_usuario');
+    }
 
-  public function clientes()
-  {
-    return $this->hasMany(Cliente::class, 'id_usuario');
-  }
+    public function ventaDetalle()
+    {
+        return $this->hasMany(VentaDetalle::class, 'id_venta');
+    }
 
-  public function facturaElectronica() {
-    return $this->hasMany(FacturaElectronica::class, 'id_usuario');
-  }
+    public function clientes()
+    {
+        return $this->hasMany(Cliente::class, 'id_usuario');
+    }
+
+    public function facturaElectronica()
+    {
+        return $this->hasMany(FacturaElectronica::class, 'id_usuario');
+    }
 }
